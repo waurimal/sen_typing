@@ -22,7 +22,7 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:30px 20px; overflow-x: hidden;}
 
-/* 은은하게 움직이는 오로라 배경 */
+/* 은은하게 움직이는 오로라 배경 (라이트 버전 강화) */
 body::before{
   content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;
   background:
@@ -59,7 +59,7 @@ body::before{
 .scr.on{display:block; animation:screenIn 0.5s cubic-bezier(0.16,1,0.3,1) forwards;}
 @keyframes screenIn { from { opacity:0; transform:translateY(20px) scale(0.98); } to { opacity:1; transform:translateY(0) scale(1); } }
 
-/* FANCY CARDS */
+/* FANCY CARDS (고급스러운 유리 질감 극대화) */
 .card{
   background:var(--surface); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
   border:1px solid var(--border); border-radius:28px; padding:40px; margin-bottom:24px;
@@ -218,15 +218,22 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 .rank-table th{font-family:var(--mono);font-size:14px;letter-spacing:1px;color:var(--muted);padding:16px 20px; font-weight:800; border-bottom:2px solid rgba(0,0,0,0.08); position:sticky; top:0; background:#f8fafc; z-index:10;}
 .rank-table td{padding:16px 20px;font-size:15px; transition:all .2s; font-weight:700; border-bottom:1px solid rgba(0,0,0,0.04); color:var(--text);}
 .rank-table tr:hover td{background:rgba(2,132,199,0.02);}
-.rank-num{font-family:var(--mono);font-weight:800;font-size:18px;}
-.rank-1 .rank-num{color:var(--gold); text-shadow:0 2px 8px rgba(217, 119, 6, 0.4); transform:scale(1.3); display:inline-block;}
-.rank-2 .rank-num{color:var(--silver); transform:scale(1.1); display:inline-block;}
-.rank-3 .rank-num{color:var(--bronze); transform:scale(1.1); display:inline-block;}
 
 /* 교사용 기록표 컨트롤 영역 */
 .top-bar-controls { display: flex; gap: 16px; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-bottom: 20px; background: #fff; padding: 20px 24px; border-radius: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.05); }
 .top-bar-controls .filters { display: flex; gap: 16px; flex-wrap: wrap; align-items: center;}
 .top-bar-controls .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* 모달 (상세보기) */
+#detail-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(15,23,42,0.6); z-index:9999; align-items:center; justify-content:center; backdrop-filter:blur(4px); }
+.modal-content { background:#ffffff; width:90%; max-width:700px; max-height:85vh; border-radius:24px; padding:32px; box-shadow:0 24px 60px rgba(0,0,0,0.15); display:flex; flex-direction:column; }
+.modal-header { font-size:22px; font-weight:800; color:var(--accent); margin-bottom:16px; padding-bottom:16px; border-bottom:1px solid rgba(0,0,0,0.05); display:flex; justify-content:space-between; align-items:center; }
+.modal-body { flex:1; overflow-y:auto; padding-right:8px; }
+.detail-row { border:1px solid rgba(0,0,0,0.05); background:#f8fafc; border-radius:12px; padding:20px; margin-bottom:16px; }
+.detail-target { font-family:var(--mono); color:var(--muted); font-size:16px; margin-bottom:8px; }
+.detail-typed { font-family:var(--mono); font-size:20px; font-weight:800; letter-spacing:1px; line-height:1.4; word-wrap:break-word; }
+.detail-typed span.ok { color: var(--success); }
+.detail-typed span.ng { color: #fff; background: var(--accent2); border-radius:4px; }
 
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}60%{transform:translateX(8px)}}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -241,10 +248,27 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
   .lsel-grid{grid-template-columns:1fr 1fr;}
   .top-bar-controls { flex-direction: column; align-items: stretch; }
   .top-bar-controls .actions { justify-content: flex-end; }
+  .tinput{font-size:28px;} .sentence-display{font-size:24px;}
+  .modal-content { padding: 24px; }
 }
 </style>
 </head>
 <body>
+
+<!-- 학생 상세 기록 모달 -->
+<div id="detail-modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span id="detail-modal-title">상세 기록</span>
+      <button style="background:none; border:none; font-size:24px; cursor:pointer; color:var(--muted);" onclick="document.getElementById('detail-modal').style.display='none'">✕</button>
+    </div>
+    <div class="modal-body" id="detail-modal-body"></div>
+    <div style="text-align:right; margin-top:20px;">
+      <button class="btn bs" onclick="document.getElementById('detail-modal').style.display='none'">닫기</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // =========================================================
 // 🚀 [필수 설정] Firebase 프로젝트 설정값을 여기에 붙여넣으세요!
@@ -411,6 +435,40 @@ window.addEventListener('DOMContentLoaded', () => {
       <button class="btn bp" id="btn-save-firebase" onclick="saveToFirebase()" style="margin-left:auto;">☁️ Firebase에 일괄 저장</button>
     </div>
   </div>
+  
+  <!-- 랭킹 데이터 관리 -->
+  <div class="card danger">
+    <div class="ct danger">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+      랭킹 데이터 영구 초기화
+    </div>
+    <div class="fg">
+      <label>초기화 대상 선택</label>
+      <div class="select-wrap">
+        <select id="del-type" onchange="toggleDeleteInputs()">
+          <option value="all">🚨 전체 랭킹 초기화 (모든 데이터 삭제)</option>
+          <option value="grade">특정 학년 랭킹 데이터 삭제</option>
+          <option value="lesson">특정 단원 랭킹 데이터 삭제</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="fg" id="del-grade-wrap" style="display:none;">
+      <label>삭제할 학년 (숫자 입력)</label>
+      <input type="number" id="del-grade" placeholder="예: 3" min="1" max="6"/>
+    </div>
+    
+    <div class="fg" id="del-lesson-wrap" style="display:none;">
+      <label>삭제할 단원 선택</label>
+      <div class="select-wrap">
+        <select id="del-lesson-select"></select>
+      </div>
+    </div>
+
+    <div class="br" style="margin-top:24px;">
+      <button class="btn bs" onclick="executeDeleteRanking()" style="width:100%; background:rgba(225,29,72,0.05); color:var(--accent2); border-color:rgba(225,29,72,0.3); box-shadow:0 4px 12px rgba(225,29,72,0.05);">🗑️ 선택한 랭킹 데이터 영구 삭제</button>
+    </div>
+  </div>
 </div>
 
 <!-- ⑨ 교사용 기록표 화면 -->
@@ -468,7 +526,7 @@ window.addEventListener('DOMContentLoaded', () => {
             <th>학생 정보</th>
             <th>정확도</th>
             <th>최종 점수</th>
-            <th>소요 시간</th>
+            <th>상세 기록</th>
           </tr>
         </thead>
         <tbody id="rec-tbody">
@@ -706,7 +764,7 @@ function doLogin(){
   if(pw===(localStorage.getItem(K_PW)||'1234')){
     document.getElementById('tpw').value='';
     document.getElementById('school-input').value = document.getElementById('school-nm').textContent;
-    renderLessonList(); hideEditPanel(); goto('s-teacher');
+    renderLessonList(); hideEditPanel(); toggleDeleteInputs(); goto('s-teacher');
   } else alert('비밀번호가 틀렸습니다.');
 }
 function resetPassword(){
@@ -768,6 +826,64 @@ async function saveToFirebase(){
   }
   btn.textContent = "☁️ Firebase에 일괄 저장"; btn.disabled = false;
   goto('s-mode');
+}
+
+// ── 랭킹 데이터 삭제 기능 (Firebase) ──
+function toggleDeleteInputs() {
+  const type = document.getElementById('del-type').value;
+  document.getElementById('del-grade-wrap').style.display = type === 'grade' ? 'flex' : 'none';
+  document.getElementById('del-lesson-wrap').style.display = type === 'lesson' ? 'flex' : 'none';
+  
+  if(type === 'lesson') {
+    const validLessons = lessons.filter(l => parseSentences(l.words).length > 0);
+    document.getElementById('del-lesson-select').innerHTML = validLessons.map(l => `<option value="${l.code}">${l.code} ${l.name ? '- '+l.name : ''}</option>`).join('');
+  }
+}
+
+async function executeDeleteRanking() {
+  const type = document.getElementById('del-type').value;
+  let query = db.collection("rankings");
+  let confirmMsg = "";
+  
+  if(type === 'all') {
+    confirmMsg = "정말로 [모든 랭킹 데이터]를 삭제하시겠습니까?\n이 작업은 절대 되돌릴 수 없습니다!";
+  } else if(type === 'grade') {
+    const g = Number(document.getElementById('del-grade').value);
+    if(!g) return alert("삭제할 학년을 입력하세요.");
+    query = query.where("grade", "==", g);
+    confirmMsg = `정말로 [${g}학년]의 모든 랭킹 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`;
+  } else if(type === 'lesson') {
+    const l = document.getElementById('del-lesson-select').value;
+    if(!l) return alert("삭제할 단원을 선택하세요.");
+    query = query.where("lesson", "==", l);
+    confirmMsg = `정말로 [단원 ${l}]의 모든 랭킹 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`;
+  }
+
+  if(!confirm(confirmMsg)) return;
+  
+  const pw = prompt("보안을 위해 교사 비밀번호를 다시 한번 입력해주세요.");
+  if(pw !== (localStorage.getItem(K_PW) || '1234')) {
+    return alert("비밀번호가 틀렸습니다. 삭제가 취소되었습니다.");
+  }
+
+  try {
+    const snapshot = await query.get();
+    if(snapshot.empty) {
+      return alert("해당 조건에 맞는 데이터가 존재하지 않습니다.");
+    }
+    
+    // Firestore batch delete
+    const batch = db.batch();
+    snapshot.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+    
+    await batch.commit();
+    alert(`성공적으로 ${snapshot.size}개의 데이터를 삭제했습니다.`);
+    initTeacherRecords(); // 기록 화면 리프레시
+  } catch(error) {
+    alert("데이터 삭제 중 오류가 발생했습니다: " + error.message);
+  }
 }
 
 // ── 교사용 기록표 & 데이터 초기화 ──
@@ -846,10 +962,48 @@ function renderTeacherRecords() {
         <td style="color:var(--accent);">${r.grade}학년 ${r.class}반 ${r.number}번 ${r.name}</td>
         <td><span class="${accClass}">${acc}%</span></td>
         <td style="font-family:var(--mono); font-weight:800; color:var(--text);">${finalScore}점</td>
-        <td style="font-family:var(--mono);">${r.time ? Number(r.time).toFixed(1)+'s' : '-'}</td>
+        <td>
+          <button class="btn bs" style="padding:6px 14px; font-size:13px; font-weight:700; border-radius:8px;" onclick="showStudentDetails('${r.id}')">상세보기</button>
+        </td>
       </tr>
     `;
   }).join('');
+}
+
+// 학생 상세 보기 (모달)
+function showStudentDetails(recordId) {
+  const rec = teacherRecords.find(r => r.id === recordId);
+  if(!rec || !rec.details) return alert("해당 기록의 상세 데이터가 존재하지 않습니다. (이전 버전 데이터일 수 있습니다)");
+
+  document.getElementById('detail-modal-title').textContent = `[${rec.grade}학년 ${rec.class}반 ${rec.name}] 상세 기록`;
+
+  let html = '';
+  rec.details.forEach((d, i) => {
+    let typedHtml = '';
+    const target = d.sentence;
+    const typed = d.typed || '';
+
+    // 글자별로 맞음/틀림 비교 하이라이트 (게임 화면과 동일)
+    for(let j=0; j<Math.max(target.length, typed.length); j++) {
+      if (j < typed.length) {
+        if(typed[j] === target[j]) typedHtml += `<span class="ok">${typed[j]}</span>`;
+        else typedHtml += `<span class="ng">${typed[j] === ' ' ? '_' : typed[j]}</span>`;
+      }
+    }
+
+    html += `
+      <div class="detail-row">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span style="font-weight:800; color:${d.correct ? 'var(--success)' : 'var(--accent2)'}">${i+1}. ${d.correct ? '✅ 성공' : '❌ 건너뜀 (실패)'}</span>
+        </div>
+        <div class="detail-target">정답: ${target}</div>
+        <div class="detail-typed">입력: ${typedHtml || '<span style="color:var(--muted); font-size:14px; font-weight:normal;">입력 기록 없음</span>'}</div>
+      </div>
+    `;
+  });
+
+  document.getElementById('detail-modal-body').innerHTML = html;
+  document.getElementById('detail-modal').style.display = 'flex';
 }
 
 function downloadCSV() {
@@ -881,30 +1035,6 @@ function downloadCSV() {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-}
-
-async function deleteFilteredRecords() {
-  const rows = getFilteredTeacherRecords();
-  if(!rows.length) return alert("삭제할 데이터가 없습니다.");
-  
-  let msg = `현재 필터링된 [${rows.length}개]의 데이터를 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`;
-  if(!confirm(msg)) return;
-  
-  const pw = prompt("보안을 위해 교사 비밀번호를 입력해주세요.");
-  if(pw !== (localStorage.getItem(K_PW) || '1234')) return alert("비밀번호가 틀렸습니다.");
-  
-  try {
-    const batch = db.batch();
-    rows.forEach(r => {
-      const docRef = db.collection("rankings").doc(r.id);
-      batch.delete(docRef);
-    });
-    await batch.commit();
-    alert("성공적으로 데이터를 삭제했습니다.");
-    initTeacherRecords(); // 새로고침
-  } catch(e) {
-    alert("데이터 삭제 중 오류가 발생했습니다: " + e.message);
-  }
 }
 
 // ── 학생 모드 ──
@@ -1053,7 +1183,8 @@ document.getElementById('tinput').addEventListener('input', function() {
     const finalScore = finalCpm * player.diff;
     typedChars += target.length; // 누적 타이핑 수 저장
     
-    results.push({sentence: target, meaning: queue[current].meaning, correct: true, cpm: finalCpm, score: finalScore, time: elapsedSec});
+    // 상세보기용 기록 추가 (typed: target 저장)
+    results.push({sentence: target, meaning: queue[current].meaning, correct: true, cpm: finalCpm, score: finalScore, time: elapsedSec, typed: target});
     setTimeout(() => { current++; current >= queue.length ? endGame() : renderQ(); }, 400);
   }
 });
@@ -1061,7 +1192,9 @@ document.getElementById('tinput').addEventListener('input', function() {
 function skipSentence(){
   clearInterval(timer);
   const target = queue[current].sentence;
-  results.push({sentence: target, meaning: queue[current].meaning, correct: false, cpm: 0, score: 0, time: (Date.now()-qStart)/1000});
+  const typedInput = document.getElementById('tinput').value; // 포기 직전까지 입력한 내용 캡처
+  
+  results.push({sentence: target, meaning: queue[current].meaning, correct: false, cpm: 0, score: 0, time: (Date.now()-qStart)/1000, typed: typedInput});
   const inp = document.getElementById('tinput');
   inp.className = 'tinput wrg'; inp.value = "SKIPPED...";
   setTimeout(() => { current++; current >= queue.length ? endGame() : renderQ(); }, 400);
@@ -1110,14 +1243,17 @@ async function endGame(){
   el.innerHTML='<div class="ss">⏳ Firebase 랭킹 서버에 점수 기록 중...</div>';
   goto('s-result');
 
-  // Firebase에 최종 기록 전송
+  // Firebase에 상세 기록(details) 배열까지 함께 전송
   try {
+    const detailData = results.map(r => ({ sentence: r.sentence, typed: r.typed, correct: r.correct }));
+
     await db.collection("rankings").add({
       date: new Date().toLocaleString('ko-KR'),
       timestamp: Date.now(), // 정렬용
       grade: Number(player.grade), class: Number(player.class), number: Number(player.number), name: player.name,
       lesson: selLesson.code, diff: Number(player.diff),
-      cpm: avgCpm, score: totalScore, accuracy: accuracy, time: totalSec
+      cpm: avgCpm, score: totalScore, accuracy: accuracy, time: totalSec,
+      details: detailData // 👈 상세보기용 데이터 저장
     });
     el.innerHTML='<div class="ss ok">✓ Firebase 서버 랭킹 등록 완료!</div>';
   } catch(e) {
