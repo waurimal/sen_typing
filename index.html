@@ -114,7 +114,7 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 .bs:hover{background:#ffffff;border-color:rgba(0,0,0,0.15);transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,0.08);}
 .br{display:flex;gap:16px;margin-top:24px;flex-wrap:wrap;align-items:center;}
 
-/* MODE SELECT BUTTONS (높이 2/3 수준으로 축소됨) */
+/* MODE SELECT BUTTONS */
 .msel{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:20px;margin-bottom:40px;}
 .mbtn{
   background:rgba(255,255,255,0.6); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
@@ -152,7 +152,7 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 .lesson-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:6px;border-radius:10px;transition:all .2s;}
 .lesson-del:hover{color:var(--accent2); background:rgba(225,61,113,.1);}
 
-/* LESSON SELECT CARDS (높이 1/2 수준) */
+/* LESSON SELECT CARDS */
 .lsel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-top:16px;}
 .lsel-card{
   background:rgba(255,255,255,0.9);border:1px solid rgba(255,255,255,1);border-radius:20px;
@@ -182,7 +182,7 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 .qcnt{font-family:var(--mono);font-size:18px;color:var(--accent3);letter-spacing:2px;margin-bottom:16px; font-weight:800;}
 .qmean{font-size:36px;font-weight:800;color:var(--text);margin-bottom:24px;line-height:1.4; text-shadow:0 4px 12px rgba(0,0,0,0.05);}
 
-/* SENTENCE DISPLAY (문장 하이라이트 & 블라인드) */
+/* SENTENCE DISPLAY */
 .sentence-display {
   font-family: var(--mono); font-size: 32px; font-weight: 800; color: var(--muted);
   background: rgba(0,0,0,0.03); padding: 24px 32px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.05);
@@ -298,17 +298,37 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 .top-bar-controls .filters { display: flex; gap: 16px; flex-wrap: wrap; align-items: center;}
 .top-bar-controls .actions { display: flex; gap: 12px; flex-wrap: wrap; }
 
-/* FANCY MODAL (상세보기) */
+/* ===== FANCY MODAL (상세보기 완전 개편) ===== */
 #detail-modal { display:none; position:fixed; inset:0; width:100vw; height:100vh; background:rgba(15,23,42,0.7); z-index:99999; align-items:center; justify-content:center; backdrop-filter:blur(8px); }
-.modal-content { background:#ffffff; width:90%; max-width:800px; max-height:85vh; border-radius:32px; padding:40px; box-shadow:0 30px 80px rgba(0,0,0,0.25); display:flex; flex-direction:column; animation:modalIn 0.4s cubic-bezier(0.16,1,0.3,1); }
+.modal-content { background:#f8fafc; width:90%; max-width:800px; max-height:85vh; border-radius:32px; padding:40px; box-shadow:0 30px 80px rgba(0,0,0,0.25); display:flex; flex-direction:column; animation:modalIn 0.4s cubic-bezier(0.16,1,0.3,1); border:1px solid rgba(255,255,255,0.5); }
 @keyframes modalIn { from{ opacity:0; transform:scale(0.95) translateY(20px); } to{ opacity:1; transform:scale(1) translateY(0); } }
 .modal-header { font-size:26px; font-weight:800; color:var(--accent); margin-bottom:20px; padding-bottom:20px; border-bottom:2px solid rgba(0,0,0,0.05); display:flex; justify-content:space-between; align-items:center; }
-.modal-body { flex:1; overflow-y:auto; padding-right:12px; }
-.detail-row { border:1px solid rgba(0,0,0,0.05); background:#f8fafc; border-radius:20px; padding:24px; margin-bottom:16px; box-shadow:0 4px 12px rgba(0,0,0,0.02); }
-.detail-target { font-family:var(--mono); color:var(--muted); font-size:16px; margin-bottom:12px; font-weight:700;}
-.detail-typed { font-family:var(--mono); font-size:24px; font-weight:800; letter-spacing:1px; line-height:1.5; word-wrap:break-word; }
+.modal-body { flex:1; overflow-y:auto; padding-right:12px; display:flex; flex-direction:column; gap:20px; }
+
+/* 팬시 상세 로우 (문장 단위) */
+.detail-row { 
+  background:#ffffff; border-radius:24px; padding:30px; 
+  box-shadow:0 8px 24px rgba(0,0,0,0.03); border:1px solid rgba(0,0,0,0.04);
+  position: relative; overflow: hidden;
+}
+.detail-row::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 8px; }
+.detail-row.is-ok::before { background: var(--success); }
+.detail-row.is-ng::before { background: var(--accent2); }
+
+.detail-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; padding-bottom:16px; border-bottom:1px dashed rgba(0,0,0,0.08); }
+.detail-status { display:flex; align-items:center; gap:8px; font-size:18px; font-weight:800; }
+.detail-status.ok { color: var(--success); }
+.detail-status.ng { color: var(--accent2); }
+.detail-time { font-size:15px; color:var(--muted); font-family:var(--mono); font-weight:800; background:rgba(0,0,0,0.04); padding:6px 12px; border-radius:10px;}
+
+.detail-content { display:flex; flex-direction:column; gap:20px; }
+.detail-item { display:flex; flex-direction:column; gap:8px; }
+.detail-lbl { font-size:14px; color:var(--muted); font-weight:800; text-transform:uppercase; letter-spacing:1px; }
+.detail-target { font-family:var(--mono); color:var(--text); font-size:20px; font-weight:700; background:rgba(14,165,233,0.05); padding:16px 20px; border-radius:16px; border:1px solid rgba(14,165,233,0.1); }
+.detail-typed { font-family:var(--mono); font-size:24px; font-weight:800; letter-spacing:1px; line-height:1.5; word-wrap:break-word; background:rgba(0,0,0,0.02); padding:16px 20px; border-radius:16px; border:1px solid rgba(0,0,0,0.04); }
 .detail-typed span.ok { color: var(--success); }
-.detail-typed span.ng { color: #fff; background: var(--accent2); border-radius:6px; padding:0 2px;}
+.detail-typed span.ng { color: #fff; background: var(--accent2); border-radius:6px; padding:0 4px; box-shadow:0 2px 4px rgba(225,29,72,0.2); }
+.detail-empty { color:var(--muted); font-size:16px; font-weight:normal; font-family:var(--sans); font-style:italic; }
 
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}60%{transform:translateX(8px)}}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -373,6 +393,7 @@ let qStart=0, totalStart=0, timer=null;
 let rankData=[], rankTab='class', rankLesson='', lastScore=null;
 let typedChars = 0; 
 let teacherRecords = []; 
+let isProcessing = false; // 중복(따닥) 방지용 Lock 변수
 const K_PW = 'str_pw'; 
 
 // DB 로드
@@ -1065,7 +1086,7 @@ function renderTeacherRecords() {
   }).join('');
 }
 
-// 학생 상세 보기 (모달)
+// 학생 상세 보기 (모달) - 팬시한 UI로 전면 개편
 function showStudentDetails(recordId) {
   const rec = teacherRecords.find(r => r.id === recordId);
   if(!rec || !rec.details) return alert("해당 기록의 상세 데이터가 존재하지 않습니다. (이전 버전 데이터일 수 있습니다)");
@@ -1078,20 +1099,38 @@ function showStudentDetails(recordId) {
     const target = d.sentence;
     const typed = d.typed || '';
 
+    // 글자별 정답/오답 하이라이트
     for(let j=0; j<Math.max(target.length, typed.length); j++) {
       if (j < typed.length) {
-        if(typed[j] === target[j]) typedHtml += `<span class="ok">${typed[j]}</span>`;
-        else typedHtml += `<span class="ng">${typed[j] === ' ' ? '_' : typed[j]}</span>`;
+        if(typed[j] === target[j]) {
+          typedHtml += `<span class="ok">${typed[j]}</span>`;
+        } else {
+          // 오답인 경우 붉은색 배경 (띄어쓰기는 언더스코어로 명확히 표시)
+          typedHtml += `<span class="ng">${typed[j] === ' ' ? '_' : typed[j]}</span>`;
+        }
       }
     }
 
+    const isOk = d.correct;
+    const statusHtml = isOk ? `<div class="detail-status ok">✅ 성공</div>` : `<div class="detail-status ng">❌ 실패 (건너뜀)</div>`;
+    const timeHtml = d.time ? `<div class="detail-time">${Number(d.time).toFixed(1)}s</div>` : '';
+
     html += `
-      <div class="detail-row">
-        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-          <span style="font-weight:800; color:${d.correct ? 'var(--success)' : 'var(--accent2)'}">${i+1}. ${d.correct ? '✅ 성공' : '❌ 건너뜀 (실패)'}</span>
+      <div class="detail-row ${isOk ? 'is-ok' : 'is-ng'}">
+        <div class="detail-header">
+          ${statusHtml}
+          ${timeHtml}
         </div>
-        <div class="detail-target">정답: ${target}</div>
-        <div class="detail-typed">입력: ${typedHtml || '<span style="color:var(--muted); font-size:14px; font-weight:normal;">입력 기록 없음</span>'}</div>
+        <div class="detail-content">
+          <div class="detail-item">
+            <div class="detail-lbl">정답 문장</div>
+            <div class="detail-target">${target}</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-lbl">학생 입력</div>
+            <div class="detail-typed">${typedHtml || '<span class="detail-empty">입력 기록 없음</span>'}</div>
+          </div>
+        </div>
       </div>
     `;
   });
@@ -1204,6 +1243,7 @@ function startGame(){
 function retryGame(){ queue=[...sentences].sort(()=>Math.random()-.5); current=0; results=[]; typedChars=0; totalStart=Date.now(); goto('s-game'); renderQ(); }
 
 function renderQ(){
+  isProcessing = false; // 중복 방지 해제
   const card=document.getElementById('game-card');
   card.style.animation='none'; void card.offsetWidth; card.style.animation='screenIn .4s cubic-bezier(0.16,1,0.3,1) forwards';
   
@@ -1249,6 +1289,8 @@ function updateSentenceDisplay(typedVal) {
 }
 
 document.getElementById('tinput').addEventListener('input', function() {
+  if(isProcessing) return; // 이미 처리중이면 차단
+  
   updateSentenceDisplay(this.value);
   const target = queue[current].sentence;
   
@@ -1264,6 +1306,7 @@ document.getElementById('tinput').addEventListener('input', function() {
 
   // 문장 완성
   if(this.value === target) {
+    isProcessing = true; // 처리 잠금
     this.disabled = true; this.className = 'tinput cor';
     clearInterval(timer);
     const elapsedSec = (Date.now() - qStart) / 1000;
@@ -1277,11 +1320,15 @@ document.getElementById('tinput').addEventListener('input', function() {
 });
 
 function skipSentence(){
+  if(isProcessing) return; // 따닥 클릭(중복) 방지!
+  isProcessing = true;
   clearInterval(timer);
+  
   const target = queue[current].sentence;
   const typedInput = document.getElementById('tinput').value; 
   
   results.push({sentence: target, meaning: queue[current].meaning, correct: false, cpm: 0, score: 0, time: (Date.now()-qStart)/1000, typed: typedInput});
+  
   const inp = document.getElementById('tinput');
   inp.className = 'tinput wrg'; inp.value = "SKIPPED...";
   setTimeout(() => { current++; current >= queue.length ? endGame() : renderQ(); }, 400);
