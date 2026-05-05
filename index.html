@@ -114,7 +114,7 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 .bs:hover{background:#ffffff;border-color:rgba(0,0,0,0.15);transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,0.08);}
 .br{display:flex;gap:16px;margin-top:24px;flex-wrap:wrap;align-items:center;}
 
-/* MODE SELECT BUTTONS */
+/* MODE SELECT BUTTONS (높이 2/3 수준으로 축소됨) */
 .msel{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:20px;margin-bottom:40px;}
 .mbtn{
   background:rgba(255,255,255,0.6); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
@@ -243,8 +243,8 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 .ww{color:var(--text);font-weight:800; font-size: 20px; margin-bottom:4px;}
 .wm{color:var(--muted); font-family:var(--sans);font-size:15px; font-weight:700;}
 .wt{color:var(--accent3);font-size:22px; font-weight:800; font-family:var(--mono); background:rgba(139,92,246,0.1); padding:8px 16px; border-radius:12px; border:1px solid rgba(139,92,246,0.2);}
-
-/* ===== FANCY RANKING UI ===== */
+.wn{font-size:20px;color:var(--muted);width:32px; font-weight:800; font-family:var(--mono); text-align:center;}
+.ss{padding:20px 28px;border-radius:20px;background:#ffffff;border:1px solid var(--border);font-size:18px;margin-top:24px; font-weight:800; box-shadow:0 8px 24px rgba(0,0,0,0.04);}
 .rank-filters {
   display: flex; gap: 8px; background: rgba(0,0,0,0.03); padding: 10px; 
   border-radius: 20px; border: 1px solid rgba(0,0,0,0.04); margin-bottom: 30px;
@@ -1086,33 +1086,42 @@ function renderTeacherRecords() {
   }).join('');
 }
 
-// 학생 상세 보기 (모달) - 팬시한 UI로 전면 개편
+// 학생 상세 보기 (모달) - 팬시한 UI로 전면 개편 및 에러 방지 강화
 function showStudentDetails(recordId) {
   const rec = teacherRecords.find(r => r.id === recordId);
-  if(!rec || !rec.details) return alert("해당 기록의 상세 데이터가 존재하지 않습니다. (이전 버전 데이터일 수 있습니다)");
+  if(!rec || !rec.details || rec.details.length === 0) {
+    return alert("해당 기록의 상세 데이터가 존재하지 않습니다. (오래된 과거 버전의 데이터입니다)");
+  }
 
   document.getElementById('detail-modal-title').textContent = `[${rec.grade}학년 ${rec.class}반 ${rec.name}] 상세 기록`;
 
   let html = '';
   rec.details.forEach((d, i) => {
     let typedHtml = '';
-    const target = d.sentence;
+    
+    // 이전 버전(단어 게임)과 신버전(문장 게임)의 데이터 구조 차이로 인한 에러 완벽 방지
+    const target = d.sentence || d.word || '정답 문장 없음';
     const typed = d.typed || '';
 
-    // 글자별 정답/오답 하이라이트
-    for(let j=0; j<Math.max(target.length, typed.length); j++) {
-      if (j < typed.length) {
-        if(typed[j] === target[j]) {
-          typedHtml += `<span class="ok">${typed[j]}</span>`;
-        } else {
-          // 오답인 경우 붉은색 배경 (띄어쓰기는 언더스코어로 명확히 표시)
-          typedHtml += `<span class="ng">${typed[j] === ' ' ? '_' : typed[j]}</span>`;
+    try {
+      // 글자별 정답/오답 하이라이트
+      for(let j=0; j<Math.max(target.length, typed.length); j++) {
+        if (j < typed.length) {
+          if(typed[j] === target[j]) {
+            typedHtml += `<span class="ok">${typed[j]}</span>`;
+          } else {
+            // 오답인 경우 붉은색 배경 (띄어쓰기는 언더스코어로 명확히 표시)
+            typedHtml += `<span class="ng">${typed[j] === ' ' ? '_' : typed[j]}</span>`;
+          }
         }
       }
+    } catch(err) {
+      typedHtml = `<span style="color:red; font-size:14px;">데이터 로드 에러</span>`;
     }
 
     const isOk = d.correct;
-    const statusHtml = isOk ? `<div class="detail-status ok">✅ 성공</div>` : `<div class="detail-status ng">❌ 실패 (건너뜀)</div>`;
+    // 번호를 추가하여 (예: 1. ✅ 성공) 직관적으로 알 수 있게 변경
+    const statusHtml = isOk ? `<div class="detail-status ok">${i+1}. ✅ 성공</div>` : `<div class="detail-status ng">${i+1}. ❌ 실패 (건너뜀)</div>`;
     const timeHtml = d.time ? `<div class="detail-time">${Number(d.time).toFixed(1)}s</div>` : '';
 
     html += `
@@ -1364,6 +1373,7 @@ async function endGame(){
   // 팬시한 리스트 출력
   document.getElementById('wrl').innerHTML = results.map((r,i)=>`
     <div class="wrr ${r.correct?'ok':'ng'}">
+      <div class="wn">${String(i+1).padStart(2,'0')}</div>
       <div class="wrr-icon">${r.correct?'✓':'✗'}</div>
       <div class="wrr-content">
         <div class="ww">${r.sentence}</div>
