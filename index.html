@@ -22,7 +22,7 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:30px 20px; overflow-x: hidden;}
 
-/* 은은하게 움직이는 오로라 배경 */
+/* 은은하게 움직이는 오로라 배경 (라이트 버전 강화) */
 body::before{
   content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;
   background:
@@ -51,6 +51,7 @@ body::before{
   background: linear-gradient(135deg, var(--accent), var(--accent3));
   -webkit-background-clip: text; color: transparent;
 }
+/* 학교명 30px, 부제 25px */
 .school-nm{font-size:clamp(20px, 4vw, 30px);color:var(--accent3);font-weight:800;margin-top:20px;letter-spacing:3px;min-height:34px; text-shadow:0 4px 12px var(--accent3-glow);}
 .hdr-sub{font-size:clamp(16px, 3vw, 25px);color:var(--muted);margin-top:12px;letter-spacing:2px;transition:color .3s; font-weight:700;}
 
@@ -59,15 +60,18 @@ body::before{
 .scr.on{display:block; animation:screenIn 0.5s cubic-bezier(0.16,1,0.3,1) forwards;}
 @keyframes screenIn { from { opacity:0; transform:translateY(20px) scale(0.98); } to { opacity:1; transform:translateY(0) scale(1); } }
 
-/* FANCY CARDS */
+/* FANCY CARDS (고급스러운 유리 질감 극대화) */
 .card{
   background:var(--surface); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
   border:1px solid var(--border); border-radius:28px; padding:40px; margin-bottom:24px;
   box-shadow:0 16px 40px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,1);
 }
 .card.tc{border-color:rgba(217,119,6,.2); box-shadow:0 12px 36px rgba(217,119,6,0.06), inset 0 1px 0 rgba(255,255,255,1);}
+.card.danger{border-color:rgba(225,29,72,.3); box-shadow:0 12px 36px rgba(225,29,72,0.08), inset 0 1px 0 rgba(255,255,255,1);}
+
 .ct{font-family:var(--mono);font-size:16px;letter-spacing:3px;text-transform:uppercase;color:var(--accent);margin-bottom:24px;display:flex;align-items:center;gap:12px; font-weight:800;}
 .ct.t{color:var(--teacher);}
+.ct.danger{color:var(--accent2);}
 .ct::before{content:'';display:inline-block;width:12px;height:12px;border-radius:50%;background:currentColor;box-shadow:0 0 12px currentColor;}
 
 /* FORM ELEMENTS */
@@ -111,7 +115,7 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 .bs:hover{background:#ffffff;border-color:rgba(0,0,0,0.2);transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,0.08);}
 .br{display:flex;gap:16px;margin-top:24px;flex-wrap:wrap;align-items:center;}
 
-/* MODE SELECT BUTTONS */
+/* MODE SELECT BUTTONS (높이 2/3 수준으로 축소됨) */
 .msel{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:20px;margin-bottom:40px;}
 .mbtn{
   background:rgba(255,255,255,0.5); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
@@ -122,6 +126,7 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 }
 .mbtn:hover{transform:translateY(-10px) scale(1.02); background:rgba(255,255,255,0.9); box-shadow:0 24px 50px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,1);}
 .mbtn.sb:hover{border-color:rgba(2,132,199,0.3);box-shadow:0 24px 50px rgba(2,132,199,.15), inset 0 1px 0 rgba(255,255,255,1);}
+.mbtn.tb:hover{border-color:rgba(217,119,6,0.3);box-shadow:0 24px 50px rgba(217,119,6,.15), inset 0 1px 0 rgba(255,255,255,1);}
 .mbtn.rb:hover{border-color:rgba(124,58,237,0.3);box-shadow:0 24px 50px rgba(124,58,237,.15), inset 0 1px 0 rgba(255,255,255,1);}
 .mico{font-size:64px; filter:drop-shadow(0 8px 16px rgba(0,0,0,0.1)); transition:transform .4s cubic-bezier(0.16,1,0.3,1);}
 .mbtn:hover .mico{transform:scale(1.2) translateY(-5px);}
@@ -159,7 +164,7 @@ textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px
 .bnr.ok{background:rgba(16,185,129,.05);border-color:rgba(16,185,129,.2); color:var(--success);}
 .bnr.warn{background:rgba(255,61,113,.05);border-color:rgba(255,61,113,.2);color:var(--accent2);}
 
-/* LESSON SELECT CARDS */
+/* LESSON SELECT CARDS (높이 1/2 수준) */
 .lsel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-top:16px;}
 .lsel-card{
   background:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,1);border-radius:20px;
@@ -456,6 +461,40 @@ window.addEventListener('DOMContentLoaded', () => {
       <button class="btn bp" id="btn-save-firebase" onclick="saveToFirebase()" style="margin-left:auto;">☁️ Firebase에 일괄 저장</button>
     </div>
   </div>
+
+  <!-- 랭킹 데이터 관리 -->
+  <div class="card danger">
+    <div class="ct danger">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:8px;"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+      랭킹 데이터 영구 초기화
+    </div>
+    <div class="fg">
+      <label>초기화 대상 선택</label>
+      <div class="select-wrap">
+        <select id="del-type" onchange="toggleDeleteInputs()">
+          <option value="all">🚨 전체 랭킹 초기화 (모든 데이터 삭제)</option>
+          <option value="grade">특정 학년 랭킹 데이터 삭제</option>
+          <option value="lesson">특정 단원 랭킹 데이터 삭제</option>
+        </select>
+      </div>
+    </div>
+    
+    <div class="fg" id="del-grade-wrap" style="display:none;">
+      <label>삭제할 학년 (숫자 입력)</label>
+      <input type="number" id="del-grade" placeholder="예: 3" min="1" max="6"/>
+    </div>
+    
+    <div class="fg" id="del-lesson-wrap" style="display:none;">
+      <label>삭제할 단원 선택</label>
+      <div class="select-wrap">
+        <select id="del-lesson-select"></select>
+      </div>
+    </div>
+
+    <div class="br" style="margin-top:24px;">
+      <button class="btn bs" onclick="executeDeleteRanking()" style="width:100%; background:rgba(225,29,72,0.05); color:var(--accent2); border-color:rgba(225,29,72,0.3); box-shadow:0 4px 12px rgba(225,29,72,0.05);">🗑️ 선택한 랭킹 데이터 영구 삭제</button>
+    </div>
+  </div>
 </div>
 
 <!-- ④ 학생 단원 선택 -->
@@ -685,7 +724,7 @@ function doLogin(){
   if(pw===(localStorage.getItem(K_PW)||'1234')){
     document.getElementById('tpw').value='';
     document.getElementById('school-input').value = document.getElementById('school-nm').textContent;
-    renderLessonList(); hideEditPanel(); goto('s-teacher');
+    renderLessonList(); hideEditPanel(); toggleDeleteInputs(); goto('s-teacher');
   } else alert('비밀번호가 틀렸습니다.');
 }
 function resetPassword(){
@@ -749,6 +788,63 @@ async function saveToFirebase(){
   goto('s-mode');
 }
 
+// ── 랭킹 데이터 삭제 기능 (Firebase) ──
+function toggleDeleteInputs() {
+  const type = document.getElementById('del-type').value;
+  document.getElementById('del-grade-wrap').style.display = type === 'grade' ? 'flex' : 'none';
+  document.getElementById('del-lesson-wrap').style.display = type === 'lesson' ? 'flex' : 'none';
+  
+  if(type === 'lesson') {
+    const validLessons = lessons.filter(l => parseSentences(l.words).length > 0);
+    document.getElementById('del-lesson-select').innerHTML = validLessons.map(l => `<option value="${l.code}">${l.code} ${l.name ? '- '+l.name : ''}</option>`).join('');
+  }
+}
+
+async function executeDeleteRanking() {
+  const type = document.getElementById('del-type').value;
+  let query = db.collection("rankings");
+  let confirmMsg = "";
+  
+  if(type === 'all') {
+    confirmMsg = "정말로 [모든 랭킹 데이터]를 삭제하시겠습니까?\n이 작업은 절대 되돌릴 수 없습니다!";
+  } else if(type === 'grade') {
+    const g = Number(document.getElementById('del-grade').value);
+    if(!g) return alert("삭제할 학년을 입력하세요.");
+    query = query.where("grade", "==", g);
+    confirmMsg = `정말로 [${g}학년]의 모든 랭킹 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`;
+  } else if(type === 'lesson') {
+    const l = document.getElementById('del-lesson-select').value;
+    if(!l) return alert("삭제할 단원을 선택하세요.");
+    query = query.where("lesson", "==", l);
+    confirmMsg = `정말로 [단원 ${l}]의 모든 랭킹 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`;
+  }
+
+  if(!confirm(confirmMsg)) return;
+  
+  const pw = prompt("보안을 위해 교사 비밀번호를 다시 한번 입력해주세요.");
+  if(pw !== (localStorage.getItem(K_PW) || '1234')) {
+    return alert("비밀번호가 틀렸습니다. 삭제가 취소되었습니다.");
+  }
+
+  try {
+    const snapshot = await query.get();
+    if(snapshot.empty) {
+      return alert("해당 조건에 맞는 데이터가 존재하지 않습니다.");
+    }
+    
+    // Firestore batch delete
+    const batch = db.batch();
+    snapshot.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+    
+    await batch.commit();
+    alert(`성공적으로 ${snapshot.size}개의 데이터를 삭제했습니다.`);
+  } catch(error) {
+    alert("데이터 삭제 중 오류가 발생했습니다: " + error.message);
+  }
+}
+
 // ── 학생 모드 ──
 function enterStudent(){
   const valid=lessons.filter(l=>parseSentences(l.words).length>0);
@@ -763,7 +859,8 @@ function enterStudent(){
 }
 function selectStudentLesson(code){
   document.querySelectorAll('.lsel-card').forEach(c=>c.classList.remove('sel'));
-  document.getElementById('lc-'+code).classList.add('sel');
+  const el = document.getElementById('lc-'+code);
+  if(el) el.classList.add('sel');
   selLesson=lessons.find(l=>l.code===code);
 }
 function goToPlayer(){
