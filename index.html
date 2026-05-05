@@ -3,12 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sentence Typing Race (Firebase)</title>
+<title>Sentence Typing Race</title>
 <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
 <!-- Firebase Compat SDKs -->
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-
 <style>
 /* 라이트 테마(흰색 배경)용 색상 팔레트 - 모던 글래스모피즘 */
 :root{
@@ -23,7 +22,7 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:30px 20px; overflow-x: hidden;}
 
-/* 은은하게 움직이는 오로라 배경 */
+/* 은은하게 움직이는 오로라 배경 (라이트 버전 강화) */
 body::before{
   content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;
   background:
@@ -33,7 +32,10 @@ body::before{
   pointer-events:none;z-index:0;
   animation: ambient 20s ease-in-out infinite alternate;
 }
-@keyframes ambient { 0% { transform: translateY(0) scale(1); } 100% { transform: translateY(-3%) scale(1.05); } }
+@keyframes ambient {
+  0% { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-3%) scale(1.05); }
+}
 
 /* 전체 폭 확장 (크롬북 최적화) */
 .wrap{width:100%;max-width:960px;position:relative;z-index:1;}
@@ -41,11 +43,15 @@ body::before{
 /* HEADER */
 .hdr{text-align:center;padding:40px 0 40px;}
 .hdr h1{
-  font-family:var(--mono);font-size:clamp(30px, 5.5vw, 55px);letter-spacing:4px;
+  font-family:var(--mono);font-size:clamp(30px, 6vw, 60px);letter-spacing:4px;
   text-transform:uppercase; filter: drop-shadow(0 4px 16px var(--accent-glow));
   display: flex; justify-content: center; align-items: center; gap: 16px;
 }
-.hdr-title-text { background: linear-gradient(135deg, var(--accent), var(--accent3)); -webkit-background-clip: text; color: transparent; }
+.hdr-title-text {
+  background: linear-gradient(135deg, var(--accent), var(--accent3));
+  -webkit-background-clip: text; color: transparent;
+}
+/* 학교명 30px, 부제 25px */
 .school-nm{font-size:clamp(20px, 4vw, 30px);color:var(--accent3);font-weight:800;margin-top:20px;letter-spacing:3px;min-height:34px; text-shadow:0 4px 12px var(--accent3-glow);}
 .hdr-sub{font-size:clamp(16px, 3vw, 25px);color:var(--muted);margin-top:12px;letter-spacing:2px;transition:color .3s; font-weight:700;}
 
@@ -54,7 +60,7 @@ body::before{
 .scr.on{display:block; animation:screenIn 0.5s cubic-bezier(0.16,1,0.3,1) forwards;}
 @keyframes screenIn { from { opacity:0; transform:translateY(20px) scale(0.98); } to { opacity:1; transform:translateY(0) scale(1); } }
 
-/* FANCY CARDS */
+/* FANCY CARDS (고급스러운 유리 질감 극대화) */
 .card{
   background:var(--surface); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
   border:1px solid var(--border); border-radius:28px; padding:40px; margin-bottom:24px;
@@ -85,93 +91,210 @@ input:focus,textarea:focus,select:focus{
 textarea{min-height:180px;resize:vertical;font-family:var(--mono);font-size:15px;line-height:1.8;}
 .hint{font-size:13px;color:var(--muted);margin-top:8px;line-height:1.6;}
 
-/* BUTTONS */
+/* CUSTOM SELECT ARROW */
+.select-wrap { position: relative; }
+.select-wrap select { appearance: none; padding-right: 44px; cursor: pointer; }
+.select-wrap::after {
+  content: '▼'; position: absolute; right: 18px; top: 50%; transform: translateY(-50%);
+  pointer-events: none; color: var(--muted); font-size: 14px; transition: color 0.2s;
+}
+.select-wrap:hover::after, .select-wrap:focus-within::after { color: var(--accent); }
+
+/* FANCY BUTTONS */
 .btn{font-family:var(--mono);font-size:15px;letter-spacing:2px;font-weight:800;text-transform:uppercase;padding:16px 32px;border-radius:16px;border:none;cursor:pointer;transition:all .3s cubic-bezier(0.16,1,0.3,1);}
 .bp{background:linear-gradient(135deg, var(--accent), #0369a1);color:#fff;box-shadow:0 6px 16px rgba(2,132,199,.25), inset 0 1px 0 rgba(255,255,255,0.2);}
 .bp:hover{background:linear-gradient(135deg, #0ea5e9, #0284c7);transform:translateY(-3px);box-shadow:0 10px 24px rgba(2,132,199,.35), inset 0 1px 0 rgba(255,255,255,0.2);}
 .bt{background:linear-gradient(135deg, var(--teacher), #b45309);color:#fff;box-shadow:0 6px 16px rgba(217,119,6,.25), inset 0 1px 0 rgba(255,255,255,0.2);}
 .bt:hover{background:linear-gradient(135deg, #f59e0b, #d97706);transform:translateY(-3px);box-shadow:0 10px 24px rgba(217,119,6,.35), inset 0 1px 0 rgba(255,255,255,0.2);}
+.bv{background:linear-gradient(135deg, var(--accent3), #6d28d9);color:#fff;box-shadow:0 6px 16px rgba(124,58,237,.25), inset 0 1px 0 rgba(255,255,255,0.2);}
+.bv:hover{background:linear-gradient(135deg, #9333ea, #7c3aed);transform:translateY(-3px);box-shadow:0 10px 24px rgba(124,58,237,.35), inset 0 1px 0 rgba(255,255,255,0.2);}
 .bs{background:rgba(255,255,255,0.8);color:var(--text);border:1px solid rgba(0,0,0,0.1);box-shadow:0 4px 10px rgba(0,0,0,0.03);}
 .bs:hover{background:#ffffff;border-color:rgba(0,0,0,0.2);transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,0.08);}
 .br{display:flex;gap:16px;margin-top:24px;flex-wrap:wrap;align-items:center;}
 
-/* MODE SELECT BUTTONS */
-.msel{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:10px;margin-bottom:24px;}
+/* MODE SELECT BUTTONS (높이 2/3 수준으로 축소됨) */
+.msel{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:20px;margin-bottom:40px;}
 .mbtn{
   background:rgba(255,255,255,0.5); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-  border:1px solid rgba(255,255,255,0.8); border-radius:24px; padding:30px 16px;
-  cursor:pointer; text-align:center; transition:all .4s cubic-bezier(0.16,1,0.3,1);
+  border:1px solid rgba(255,255,255,0.8); border-radius:32px;
+  padding:30px 24px; cursor:pointer; text-align:center; transition:all .4s cubic-bezier(0.16,1,0.3,1);
   display:flex;flex-direction:column;align-items:center;gap:12px;
-  box-shadow:0 8px 24px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,1);
+  box-shadow:0 12px 30px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,1);
 }
-.mbtn:hover{transform:translateY(-6px) scale(1.02); background:rgba(255,255,255,0.9); box-shadow:0 16px 40px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,1);}
-.mico{font-size:56px; filter:drop-shadow(0 4px 12px rgba(0,0,0,0.1)); transition:transform .4s cubic-bezier(0.16,1,0.3,1);}
-.mbtn:hover .mico{transform:scale(1.15) translateY(-3px);}
-.mlbl{font-family:var(--mono);font-size:24px;letter-spacing:1px;font-weight:800;margin-top:0;}
-.mdsc{font-size:15px;color:var(--muted);line-height:1.4;}
+.mbtn:hover{transform:translateY(-10px) scale(1.02); background:rgba(255,255,255,0.9); box-shadow:0 24px 50px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,1);}
+.mbtn.sb:hover{border-color:rgba(2,132,199,0.3);box-shadow:0 24px 50px rgba(2,132,199,.15), inset 0 1px 0 rgba(255,255,255,1);}
+.mbtn.tb:hover{border-color:rgba(217,119,6,0.3);box-shadow:0 24px 50px rgba(217,119,6,.15), inset 0 1px 0 rgba(255,255,255,1);}
+.mbtn.rb:hover{border-color:rgba(124,58,237,0.3);box-shadow:0 24px 50px rgba(124,58,237,.15), inset 0 1px 0 rgba(255,255,255,1);}
+.mico{font-size:64px; filter:drop-shadow(0 8px 16px rgba(0,0,0,0.1)); transition:transform .4s cubic-bezier(0.16,1,0.3,1);}
+.mbtn:hover .mico{transform:scale(1.2) translateY(-5px);}
+.mlbl{font-family:var(--mono);font-size:24px;letter-spacing:2px;font-weight:800;margin-top:6px;}
+.mdsc{font-size:16px;color:var(--muted);line-height:1.6;}
+.sb .mlbl{color:var(--accent);}.tb .mlbl{color:var(--teacher);}.rb .mlbl{color:var(--accent3);}
 
-/* LESSON SELECT CARDS */
+/* CUSTOM SCROLLBARS FOR LISTS */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.03); border-radius: 10px; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
+
+/* LESSON LIST */
+.lesson-list{display:flex;flex-direction:column;gap:12px;margin-bottom:20px;}
+.lesson-row{
+  display:flex;align-items:center;gap:16px;background:var(--surface2);
+  border:1px solid rgba(255,255,255,0.8);border-radius:16px;padding:16px 20px;
+  cursor:pointer;transition:all .3s cubic-bezier(0.16,1,0.3,1);
+  box-shadow:0 4px 12px rgba(0,0,0,0.02);
+}
+.lesson-row:hover{background:#ffffff; transform:translateX(8px); border-color:rgba(0,0,0,0.05); box-shadow:0 8px 24px rgba(0,0,0,0.05);}
+.lesson-row.active{border-color:var(--teacher);background:rgba(245,158,11,.05); box-shadow:0 0 20px rgba(245,158,11,.1);}
+.lesson-code{font-family:var(--mono);font-size:16px;font-weight:800;color:var(--teacher);min-width:60px;}
+.lesson-name{font-size:16px;color:var(--text);flex:1; font-weight:700;}
+.lesson-cnt{font-family:var(--mono);font-size:14px;color:var(--muted); background:rgba(0,0,0,0.05); padding:6px 12px; border-radius:10px; font-weight:700;}
+.lesson-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:6px;border-radius:10px;transition:all .2s;}
+.lesson-del:hover{color:var(--accent2); background:rgba(255,61,113,.1);}
+
+/* WORD CHIPS (문장 표시) */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;max-height:200px;overflow-y:auto; padding-right:8px;}
+.chip{background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:12px;padding:8px 14px;font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent3);}
+
+/* BANNER */
+.bnr{border-radius:16px;padding:18px 24px;margin-bottom:24px;display:flex;align-items:center;gap:14px;font-size:16px;border:1px solid; font-weight:700; box-shadow:0 8px 24px rgba(0,0,0,0.03);}
+.bnr.ok{background:rgba(16,185,129,.05);border-color:rgba(16,185,129,.2); color:var(--success);}
+.bnr.warn{background:rgba(255,61,113,.05);border-color:rgba(255,61,113,.2);color:var(--accent2);}
+
+/* LESSON SELECT CARDS (높이 1/2 수준) */
 .lsel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;margin-top:16px;}
 .lsel-card{
   background:rgba(255,255,255,0.8);border:1px solid rgba(255,255,255,1);border-radius:20px;
   padding:16px 20px;cursor:pointer;text-align:center;transition:all .3s cubic-bezier(0.16,1,0.3,1);
-  display:flex;flex-direction:column;gap:8px;align-items:center; box-shadow:0 6px 16px rgba(0,0,0,0.03);
+  display:flex;flex-direction:column;gap:6px;align-items:center;
+  box-shadow:0 6px 16px rgba(0,0,0,0.03);
 }
 .lsel-card:hover{border-color:rgba(2,132,199,0.3);transform:translateY(-4px);box-shadow:0 12px 24px rgba(2,132,199,.15); background:#ffffff;}
+.lsel-card.sel{border-color:var(--accent);background:rgba(2,132,199,.05); box-shadow:0 0 0 3px var(--accent-glow);}
 .lsel-code{font-family:var(--mono);font-size:22px;font-weight:800;color:var(--accent);}
-.lsel-name{font-size:16px;color:var(--text);line-height:1.3; font-weight:700;}
+.lsel-name{font-size:16px;color:var(--text);line-height:1.3; font-weight:700; margin-bottom:2px;}
 .lsel-cnt{
   font-family:var(--mono);font-size:15px;color:var(--accent); font-weight:800;
-  background:rgba(2,132,199,0.1); padding:4px 16px; border-radius:12px; border:1px solid rgba(2,132,199,0.15);
+  background:rgba(2,132,199,0.1); padding:4px 16px; border-radius:12px;
+  border:1px solid rgba(2,132,199,0.15);
 }
 
-/* GAME UI - SENTENCE TYPING SPECIFIC */
-.sbar{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:20px;}
-.si{background:#ffffff;border:1px solid rgba(0,0,0,0.05);border-radius:20px;padding:16px;text-align:center; box-shadow:0 8px 24px rgba(0,0,0,0.03);}
-.sv{font-family:var(--mono);font-size:30px;font-weight:800;color:var(--accent);}
-.sl{font-size:14px;color:var(--muted);letter-spacing:1px;margin-top:4px; font-weight:800;}
-.qmean{font-size:26px;font-weight:800;color:var(--accent3);margin-bottom:24px;line-height:1.4;}
+/* GAME UI */
+.prog-bg{background:rgba(0,0,0,0.05);border-radius:99px;height:14px;margin-bottom:30px;overflow:hidden; border:1px solid rgba(0,0,0,0.05); box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent3));border-radius:99px;transition:width .4s cubic-bezier(0.16,1,0.3,1); box-shadow:0 0 16px var(--accent-glow);}
+.sbar{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:30px;}
+.si{background:#ffffff;border:1px solid rgba(0,0,0,0.05);border-radius:20px;padding:24px;text-align:center; box-shadow:0 8px 24px rgba(0,0,0,0.03);}
+.sv{font-family:var(--mono);font-size:36px;font-weight:800;color:var(--accent);}
+.sv.dng{color:var(--accent2);}
+.sv.ok{color:var(--success);}
+.sl{font-size:15px;color:var(--muted);letter-spacing:1px;margin-top:8px; font-weight:800;}
+.qcnt{font-family:var(--mono);font-size:18px;color:var(--accent3);letter-spacing:2px;margin-bottom:16px; font-weight:800;}
+.qmean{font-size:36px;font-weight:800;color:var(--text);margin-bottom:24px;line-height:1.4; text-shadow:0 4px 12px rgba(0,0,0,0.05);}
 
-/* Sentence Display Area */
+/* SENTENCE DISPLAY (문장 하이라이트) */
 .sentence-display {
-  font-family: var(--mono); font-size: 32px; font-weight: 700; color: var(--muted);
-  background: rgba(0,0,0,0.03); padding: 24px; border-radius: 16px; border: 1px solid rgba(0,0,0,0.05);
-  margin-bottom: 20px; text-align: left; line-height: 1.6; word-wrap: break-word; letter-spacing: 1px;
+  font-family: var(--mono); font-size: 32px; font-weight: 800; color: var(--muted);
+  background: rgba(0,0,0,0.03); padding: 24px 32px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.05);
+  margin-bottom: 24px; text-align: left; line-height: 1.6; word-wrap: break-word; letter-spacing: 2px;
 }
-.sentence-display span.correct { color: var(--success); background: rgba(16, 185, 129, 0.1); border-radius: 4px; }
-.sentence-display span.incorrect { color: #fff; background: var(--accent2); border-radius: 4px; }
-.sentence-display span.current { border-bottom: 3px solid var(--accent); }
+.sentence-display span.correct { color: var(--success); background: rgba(16, 185, 129, 0.1); border-radius: 6px; }
+.sentence-display span.incorrect { color: #fff; background: var(--accent2); border-radius: 6px; }
+.sentence-display span.current { border-bottom: 4px solid var(--accent); color:var(--text); }
 
 .tinput{
-  width:100%;background:#ffffff;border:2px solid rgba(0,0,0,0.1);border-radius:20px;
-  color:var(--text);font-family:var(--mono);font-size:28px;font-weight:700;padding:20px 24px;
-  outline:none;transition:all .3s cubic-bezier(0.16,1,0.3,1);margin-bottom:20px;
-  box-shadow: inset 0 4px 12px rgba(0,0,0,0.02);
+  width:100%;background:#ffffff;border:2px solid rgba(0,0,0,0.1);border-radius:24px;
+  color:var(--text);font-family:var(--mono);font-size:36px;font-weight:800;padding:28px 32px;
+  text-align:left;letter-spacing:2px;outline:none;transition:all .3s cubic-bezier(0.16,1,0.3,1);margin-bottom:24px;
+  box-shadow: inset 0 4px 12px rgba(0,0,0,0.02), 0 8px 24px rgba(0,0,0,0.04);
 }
-.tinput:focus{border-color:var(--accent);box-shadow:0 0 0 6px rgba(2,132,199,.15); background:#ffffff;}
+.tinput:focus{border-color:var(--accent);box-shadow:0 0 0 6px rgba(2,132,199,.15), 0 12px 30px rgba(2,132,199,.1); background:#ffffff;}
+.tinput.cor{border-color:var(--success);box-shadow:0 0 0 6px rgba(16,185,129,.2);color:var(--success); background:rgba(16,185,129,0.03);}
+.tinput.wrg{border-color:var(--accent2);box-shadow:0 0 0 6px rgba(225,29,72,.2);color:var(--accent2); animation:shake .3s; background:rgba(225,29,72,0.03);}
+
+/* RESULT UI */
+.rhero{text-align:center;padding:50px 0 40px;}
+.rscore{font-family:var(--mono);font-size:110px;font-weight:800;color:transparent; background:linear-gradient(to bottom, var(--text), var(--accent)); -webkit-background-clip:text; text-shadow:0 12px 40px var(--accent-glow); line-height:1;}
+.rlbl{font-size:20px;color:var(--muted);margin-top:16px;letter-spacing:4px; font-weight:800;}
+.runit{background:rgba(2,132,199,.1);border:1px solid rgba(2,132,199,.2);border-radius:12px;padding:10px 20px;font-family:var(--mono);font-size:16px;color:var(--accent);display:inline-block;margin-top:20px; font-weight:800;}
+.rgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin:30px 0;}
+.ri{background:#ffffff;border:1px solid rgba(0,0,0,0.05);border-radius:20px;padding:28px;text-align:center; box-shadow:0 8px 24px rgba(0,0,0,0.03);}
+.rv{font-family:var(--mono);font-size:40px;font-weight:800;color:var(--text);}
+.rk{font-size:16px;color:var(--muted);margin-top:8px;letter-spacing:1px; font-weight:800;}
+.wrl{display:flex;flex-direction:column;gap:12px;margin-top:16px;}
+.wrr{display:flex;align-items:center;gap:16px;padding:16px 24px;border-radius:16px;font-family:var(--mono);font-size:18px;background:#ffffff;border:1px solid rgba(0,0,0,0.04); box-shadow:0 4px 12px rgba(0,0,0,0.02);}
+.wrr.ok{border-color:rgba(16,185,129,.3); background:rgba(16,185,129,.04);}
+.wrr.ng{border-color:rgba(225,29,72,.3); background:rgba(225,29,72,.04);}
+.wn{font-size:15px;color:var(--muted);width:28px; font-weight:800;}
+.ww{color:var(--text);font-weight:800;flex:1;}
+.wt{color:var(--accent3);font-size:15px; font-weight:800;}
+.ss{padding:20px 28px;border-radius:20px;background:#ffffff;border:1px solid var(--border);font-size:18px;margin-top:24px; font-weight:800; box-shadow:0 8px 24px rgba(0,0,0,0.04);}
+.ss.ok{border-color:rgba(16,185,129,.4);color:var(--success); background:rgba(16,185,129,0.04);}
+.ss.err{border-color:rgba(225,29,72,.4);color:var(--accent2); background:rgba(225,29,72,0.04);}
+
+/* ===== RANKING UI ===== */
+.rank-filters {
+  display: flex; gap: 8px; background: rgba(0,0,0,0.03); padding: 10px; 
+  border-radius: 20px; border: 1px solid rgba(0,0,0,0.04); margin-bottom: 30px;
+  width: fit-content; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+.rank-filters .tab-btn {
+  border: none; background: transparent; color: var(--muted); padding: 14px 28px; 
+  border-radius: 14px; margin: 0; font-family: var(--sans); font-size: 16px; font-weight: 700;
+  transition: all .3s cubic-bezier(0.16,1,0.3,1);
+}
+.rank-filters .tab-btn.on {
+  background: #ffffff; color: var(--accent); box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  border: 1px solid rgba(0,0,0,0.05); font-weight: 800;
+}
+
+.sub-filter-row{display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin-bottom:24px; background:#ffffff; padding:20px 28px; border-radius:20px; border:1px solid rgba(0,0,0,0.05); box-shadow:0 8px 24px rgba(0,0,0,0.03);}
+.sub-filter-row label{font-size:16px;color:var(--text); font-weight:800;}
+.sub-filter-row select{width:auto;padding:14px 40px 14px 20px;font-size:16px; font-weight:800; min-width: 160px; border-radius:14px;}
 
 /* RANK TABLE */
 .rank-table{width:100%;border-collapse:separate; border-spacing:0 8px; margin-top:16px;}
-.rank-table th{font-family:var(--mono);font-size:15px;letter-spacing:2px;color:var(--muted);padding:16px 20px;text-align:left; font-weight:800; border-bottom:2px solid rgba(0,0,0,0.08);}
-.rank-table td{padding:20px;font-size:18px;background:#ffffff; font-weight:700; border-top:1px solid rgba(0,0,0,0.03); border-bottom:1px solid rgba(0,0,0,0.03);}
+.rank-table th{font-family:var(--mono);font-size:15px;letter-spacing:2px;color:var(--muted);padding:16px 20px;text-align:left; font-weight:800;}
+.rank-table td{padding:20px;font-size:18px;background:#ffffff; transition:all .3s cubic-bezier(0.16,1,0.3,1); font-weight:700; border-top:1px solid rgba(0,0,0,0.03); border-bottom:1px solid rgba(0,0,0,0.03);}
 .rank-table td:first-child{border-top-left-radius:16px; border-bottom-left-radius:16px; border-left:1px solid rgba(0,0,0,0.03);}
 .rank-table td:last-child{border-top-right-radius:16px; border-bottom-right-radius:16px; border-right:1px solid rgba(0,0,0,0.03);}
+.rank-table tr:hover td{background:rgba(2,132,199,0.02); transform:scale(1.01); box-shadow:0 8px 20px rgba(0,0,0,0.05);}
+.rank-table tr.me td{background:rgba(2,132,199,0.06); border-color:rgba(2,132,199,0.2);}
 .rank-num{font-family:var(--mono);font-weight:800;font-size:22px; display:inline-block; width: 40px; text-align: center;}
-.rank-1 .rank-num{color:var(--gold); transform:scale(1.4);}
+.rank-1 .rank-num{color:var(--gold); text-shadow:0 4px 12px rgba(217, 119, 6, 0.4); transform:scale(1.4);}
 .rank-2 .rank-num{color:var(--silver); transform:scale(1.2);}
 .rank-3 .rank-num{color:var(--bronze); transform:scale(1.2);}
-.rank-score{color:var(--accent);text-align:right; font-size:22px;}
+.rank-score{font-family:var(--mono);font-weight:800;color:var(--accent);text-align:right; font-size:22px;}
+.rank-info{color:var(--muted);font-size:15px;}
+.rank-name{font-weight:800; font-size:20px; color:var(--text);}
+.rank-empty{text-align:center;padding:80px 20px;color:var(--muted);font-size:18px;line-height:2; background:rgba(0,0,0,0.02); border-radius:24px; font-weight:700;}
+.rank-loading{text-align:center;padding:80px;color:var(--muted);font-size:18px; font-weight:800;}
+
+/* MY RANK BADGE */
+.my-rank-wrap{display:flex;align-items:center;gap:30px;background:linear-gradient(135deg, rgba(2,132,199,.06), rgba(2,132,199,.02));border:1px solid rgba(2,132,199,.2);border-radius:24px;padding:30px 36px;margin-bottom:32px;flex-wrap:wrap; box-shadow: 0 12px 36px rgba(2,132,199,0.08); background-color:#ffffff;}
+.my-rank-pos{font-family:var(--mono);font-size:48px;font-weight:800;color:var(--accent); text-shadow:0 6px 16px rgba(2,132,199,.2);}
+.my-rank-lbl{font-size:14px;color:var(--muted);letter-spacing:2px; font-weight:800;}
+.my-rank-nm{font-size:22px;font-weight:800; color:var(--text);}
+.my-rank-sc{font-family:var(--mono);font-size:32px;font-weight:800;color:var(--accent3); margin-top:6px;}
+
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}60%{transform:translateX(8px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.gc{animation:screenIn .4s cubic-bezier(0.16,1,0.3,1) forwards;}
+.spinner{width:28px;height:28px;border:4px solid rgba(0,0,0,0.1);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;display:inline-block;margin-right:16px;vertical-align:middle;}
 
 @media(max-width:768px){
   .msel{grid-template-columns:1fr;}
   .fr4{grid-template-columns:1fr 1fr;}
   .lsel-grid{grid-template-columns:1fr 1fr;}
-  .qmean{font-size:20px;} .sentence-display{font-size:22px;} .tinput{font-size:20px;}
+  .qmean{font-size:28px;} .tinput{font-size:28px;} .sentence-display{font-size:24px;} .rscore{font-size:80px;}
+  .rank-filters { width: 100%; justify-content: center; }
+  .rank-filters .tab-btn { flex: 1; text-align: center; padding: 14px 8px; font-size: 15px; }
+  body { padding: 20px 15px; }
+  .card { padding: 30px; }
 }
 </style>
 </head>
 <body>
-
 <script>
 // =========================================================
 // 🚀 [필수 설정] Firebase 프로젝트 설정값을 여기에 붙여넣으세요!
@@ -221,12 +344,16 @@ window.addEventListener('DOMContentLoaded', () => {
 <!-- 헤더 -->
 <div class="hdr">
   <h1>
+    <!-- 왼쪽 키보드 아이콘 -->
     <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2" ry="2"/><path d="M6 8h.01"/><path d="M10 8h.01"/><path d="M14 8h.01"/><path d="M18 8h.01"/><path d="M6 12h.01"/><path d="M10 12h.01"/><path d="M14 12h.01"/><path d="M18 12h.01"/><path d="M7 16h10"/></svg>
-    <span class="hdr-title-text">Sentence Race</span>
+    
+    <span class="hdr-title-text">Sentence Typing Race</span>
+    
+    <!-- 오른쪽 키보드 아이콘 -->
     <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="var(--accent3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2" ry="2"/><path d="M6 8h.01"/><path d="M10 8h.01"/><path d="M14 8h.01"/><path d="M18 8h.01"/><path d="M6 12h.01"/><path d="M10 12h.01"/><path d="M14 12h.01"/><path d="M18 12h.01"/><path d="M7 16h10"/></svg>
   </h1>
   <p class="school-nm" id="school-nm"></p>
-  <p class="hdr-sub" id="hsub">영어 문장 타이핑 레이스 (Firebase 연동)</p>
+  <p class="hdr-sub" id="hsub">영어 문장 타이핑 게임</p>
 </div>
 
 <!-- ① 모드 선택 -->
@@ -236,16 +363,16 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="mbtn sb" onclick="enterStudent()">
         <div class="mico">🎮</div>
         <div class="mlbl">게임 시작</div>
-        <div class="mdsc">문장 타이핑 도전!</div>
+        <div class="mdsc">단원 선택 후<br>바로 타이핑 도전!</div>
       </div>
       <div class="mbtn rb" onclick="enterRanking()">
         <div class="mico">🏆</div>
         <div class="mlbl">순위 확인</div>
-        <div class="mdsc">실시간 랭킹 보기</div>
+        <div class="mdsc">우리 반, 학년,<br>전체 랭킹 보기</div>
       </div>
     </div>
     <div style="text-align: center; padding-top: 20px; border-top: 1px solid rgba(0,0,0,0.08);">
-      <button class="btn bs" onclick="goto('s-login')" style="font-size: 13px; padding: 10px 20px;">🔧 교사 모드</button>
+      <button class="btn bs" onclick="goto('s-login')" style="font-size: 13px; padding: 10px 20px; color: var(--muted); border-color: rgba(0,0,0,0.1);">🔧 교사 모드 (설정)</button>
     </div>
   </div>
 </div>
@@ -255,8 +382,8 @@ window.addEventListener('DOMContentLoaded', () => {
   <div class="card tc">
     <div class="ct t">교사 인증</div>
     <div class="fg">
-      <label>비밀번호 (초기: 1234)</label>
-      <input type="password" id="tpw" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')doLogin()"/>
+      <label>비밀번호</label>
+      <input type="password" id="tpw" placeholder="비밀번호 입력 (초기비번: 1234)" onkeydown="if(event.key==='Enter')doLogin()"/>
     </div>
     <div class="br">
       <button class="btn bs" onclick="goto('s-mode')">← 뒤로</button>
@@ -268,54 +395,72 @@ window.addEventListener('DOMContentLoaded', () => {
 
 <!-- ③ 교사 설정 -->
 <div class="scr" id="s-teacher">
+
+  <!-- 학교명 설정 -->
   <div class="card tc">
     <div class="ct t">학교 정보</div>
-    <div class="fg"><label>학교명</label><input type="text" id="school-input" placeholder="예: 서울초등학교"/></div>
+    <div class="fg" style="margin-bottom:0">
+      <label>학교명</label>
+      <input type="text" id="school-input" placeholder="예: 서울초등학교"/>
+    </div>
+    <p class="hint">입력하면 초기 화면 상단에 멋지게 표시됩니다.</p>
   </div>
 
+  <!-- 단원 및 문장 관리 -->
   <div class="card tc">
     <div class="ct t">단원 및 문장 관리</div>
     <div class="lesson-list" id="lesson-list"></div>
     <div style="border-top:1px solid rgba(0,0,0,0.08);padding-top:24px;margin-top:16px;">
       <div style="font-size:16px;color:var(--text); font-weight:800; margin-bottom:16px;">새 단원 추가</div>
       <div class="fr2">
-        <div class="fg"><label>단원 코드</label><input type="text" id="new-code" placeholder="L01"/></div>
-        <div class="fg"><label>단원 이름</label><input type="text" id="new-name" placeholder="Unit 1"/></div>
+        <div class="fg" style="margin-bottom:0">
+          <label>단원 코드</label>
+          <input type="text" id="new-code" placeholder="L01" maxlength="6" style="font-family:var(--mono);font-weight:800;"/>
+        </div>
+        <div class="fg" style="margin-bottom:0">
+          <label>단원 이름 (선택)</label>
+          <input type="text" id="new-name" placeholder="Unit 1 / Greetings ..."/>
+        </div>
       </div>
       <div class="br"><button class="btn bt" onclick="addLesson()">+ 단원 추가</button></div>
     </div>
   </div>
 
-  <div class="card tc" id="edit-panel" style="display:none; border-color:var(--accent3);">
+  <!-- 문장 편집 패널 -->
+  <div class="card tc" id="edit-panel" style="display:none; border-color:var(--accent3); box-shadow:0 16px 40px rgba(124,58,237,0.15);">
     <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;">
-      <span id="edit-badge" style="font-family:var(--mono);font-size:18px;font-weight:800;color:#fff;background:var(--accent3);border-radius:12px;padding:10px 20px;"></span>
+      <span id="edit-badge" style="font-family:var(--mono);font-size:18px;font-weight:800;color:#fff;background:var(--accent3);border-radius:12px;padding:10px 20px; box-shadow:0 4px 12px var(--accent3-glow);"></span>
+      <span id="edit-title" style="font-size:18px;color:var(--text); font-weight:800;"></span>
     </div>
     <div class="fg">
-      <label>문장 목록 (영어문장 : 뜻)</label>
-      <textarea id="word-input" placeholder="I am a boy. : 나는 소년이다.&#10;This is an apple. : 이것은 사과이다."></textarea>
+      <label>문장 목록 (영어문장 : 한글뜻, 한 줄에 하나씩)</label>
+      <textarea id="word-input" placeholder="Hello, everyone. : 안녕, 여러분.&#10;Nice to meet you. : 만나서 반가워."></textarea>
     </div>
-    <p class="hint">형식: 영문장 : 한글뜻 (한 줄에 한 문장씩)</p>
+    <p class="hint">형식: <span style="font-family:var(--mono);color:var(--accent3);font-weight:700;">영어문장 : 한글뜻</span> (콜론으로 구분)</p>
     <div class="br">
-      <button class="btn bs" onclick="hideEditPanel()">닫기</button>
-      <button class="btn bt" onclick="saveLessonTemp()" style="margin-left:auto; background:var(--accent3);">이 단원 임시저장</button>
+      <button class="btn bs" onclick="loadSample()">샘플 불러오기</button>
+      <button class="btn bt" onclick="saveLessonTemp()" style="margin-left:auto; background:var(--accent3); box-shadow:0 6px 16px var(--accent3-glow);">이 단원 임시저장 ✓</button>
     </div>
   </div>
 
+  <!-- 비밀번호 변경 -->
   <div class="card tc">
     <div class="ct t">비밀번호 변경</div>
     <div class="fr2">
-      <div class="fg"><label>새 비밀번호</label><input type="password" id="npw1"/></div>
-      <div class="fg"><label>확인</label><input type="password" id="npw2"/></div>
+      <div class="fg" style="margin-bottom:0"><label>새 비밀번호</label><input type="password" id="npw1" placeholder="새 비밀번호"/></div>
+      <div class="fg" style="margin-bottom:0"><label>확인</label><input type="password" id="npw2" placeholder="다시 입력"/></div>
     </div>
     <div class="br"><button class="btn bs" onclick="changePw()">변경 적용</button></div>
   </div>
 
-  <div class="card" style="background:#fff; border-color:var(--accent);">
-    <div style="text-align:center; margin-bottom:20px;">
-      <strong style="color:var(--accent); font-size:20px;">[☁️ Firebase에 설정 저장]</strong><br><br>
-      단원과 문장을 모두 추가/수정했다면 아래 버튼을 눌러 데이터베이스에 동기화하세요.
+  <!-- Firebase 동기화 영역 -->
+  <div class="card" style="background: #ffffff; border: 1px solid rgba(2,132,199,.2); box-shadow:0 12px 30px rgba(2,132,199,0.08);">
+    <div style="font-size: 16px; line-height: 1.8; color: var(--text); text-align: center; margin-bottom: 28px; font-weight:500;">
+      <strong style="color:var(--accent); font-size:20px; display:block; margin-bottom:12px; font-weight:800;">[☁️ Firebase에 설정 일괄 저장]</strong>
+      단원과 문장을 모두 추가/수정했다면 아래 버튼을 누르세요.<br>
+      저장하는 즉시 학생들의 앱에 <strong>실시간으로 동기화</strong>됩니다.
     </div>
-    <div class="br">
+    <div style="display:flex; gap:16px; width: 100%;">
       <button class="btn bs" onclick="goto('s-mode')">← 나가기</button>
       <button class="btn bp" id="btn-save-firebase" onclick="saveToFirebase()" style="margin-left:auto;">☁️ Firebase에 일괄 저장</button>
     </div>
@@ -324,81 +469,92 @@ window.addEventListener('DOMContentLoaded', () => {
 
 <!-- ④ 학생 단원 선택 -->
 <div class="scr" id="s-lesson">
+  <div id="bnr-warn" class="bnr warn" style="display:none">⚠️ 등록된 단원이 없습니다. 교사가 설정을 저장해야 합니다.</div>
   <div class="card">
     <div class="ct">도전할 단원 선택</div>
     <div class="lsel-grid" id="lsel-grid"></div>
   </div>
   <div class="br">
     <button class="btn bs" onclick="goto('s-mode')">← 메인으로</button>
-    <button class="btn bp" onclick="goToPlayer()" style="margin-left:auto;">다음 단계 ➔</button>
+    <button class="btn bp" onclick="goToPlayer()" style="margin-left:auto; padding-left:40px; padding-right:40px;">다음 단계 ➔</button>
   </div>
 </div>
 
 <!-- ⑤ 학생 정보 입력 -->
 <div class="scr" id="s-player">
+  <div class="bnr ok" style="margin-bottom:24px; border-radius:20px; background:#ffffff; box-shadow:0 8px 24px rgba(16,185,129,0.08);">
+    🎯 선택 단원: <strong id="sel-lesson-lbl" style="font-family:var(--mono); margin-left:10px; font-size: 20px; font-weight:800;"></strong>
+  </div>
   <div class="card">
     <div class="ct">학생 정보 입력</div>
     <div class="fr4">
-      <div class="fg"><label>학년</label><input type="number" id="p-grade" placeholder="3"/></div>
-      <div class="fg"><label>반</label><input type="number" id="p-class" placeholder="2"/></div>
-      <div class="fg"><label>번호</label><input type="number" id="p-num" placeholder="15"/></div>
-      <div class="fg"><label>이름</label><input type="text" id="p-name" placeholder="홍길동"/></div>
+      <div class="fg" style="margin-bottom:0"><label>학년</label><input type="number" id="p-grade" placeholder="3" min="1" max="6"/></div>
+      <div class="fg" style="margin-bottom:0"><label>반</label><input type="number" id="p-class" placeholder="2" min="1" max="20"/></div>
+      <div class="fg" style="margin-bottom:0"><label>번호</label><input type="number" id="p-num" placeholder="15" min="1" max="100"/></div>
+      <div class="fg" style="margin-bottom:0"><label>이름</label><input type="text" id="p-name" placeholder="홍길동"/></div>
     </div>
     <div class="br" style="margin-top:36px;">
       <button class="btn bs" onclick="goto('s-lesson')">← 단원 변경</button>
-      <button class="btn bp" onclick="startGame()" style="margin-left:auto;">게임 시작 ⚡</button>
+      <button class="btn bp" onclick="startGame()" style="margin-left:auto; font-size:18px; padding:20px 48px;">게임 시작 ⚡</button>
     </div>
   </div>
 </div>
 
 <!-- ⑥ 문장 게임 화면 -->
 <div class="scr" id="s-game">
+  <div class="prog-bg"><div class="prog-fill" id="prog" style="width:0%"></div></div>
   <div class="sbar">
     <div class="si"><div class="sv" id="sv-score">0</div><div class="sl">타수 (CPM)</div></div>
-    <div class="si"><div class="sv" id="sv-time">0.0s</div><div class="sl">진행 시간</div></div>
-    <div class="si"><div class="sv" id="sv-left">--</div><div class="sl">남은 문장</div></div>
+    <div class="si"><div class="sv" id="sv-time">0.0s</div><div class="sl">현재 시간</div></div>
+    <div class="si"><div class="sv" id="sv-left">--</div><div class="sl">남은 문제</div></div>
   </div>
-  <div class="card gc" id="game-card" style="padding:40px;">
+  <div class="card gc" id="game-card" style="padding:50px 32px;">
     <div class="qcnt" id="qcnt">01 / 10</div>
     <div class="qmean" id="qmean">—</div>
     
-    <!-- 문장 타이핑 핵심 UI -->
+    <!-- 문장 타이핑 핵심 UI: 실시간 하이라이트 -->
     <div class="sentence-display" id="sentence-display"></div>
-    <input class="tinput" id="tinput" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="위 문장을 똑같이 타이핑하세요"/>
+    <input class="tinput" id="tinput" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="위 문장을 똑같이 입력하세요..."/>
     
-    <div style="font-size:16px;color:var(--muted);text-align:center;margin-bottom:32px;">대소문자, 띄어쓰기, 문장부호를 정확히 입력하세요</div>
+    <div style="font-size:16px;color:var(--muted);text-align:center;margin-bottom:32px; letter-spacing:1px; font-weight:800;">대소문자, 띄어쓰기, 문장부호를 완벽히 똑같이 입력하세요</div>
     <div style="text-align:center;">
-      <button class="btn bs" onclick="skipWord()">⏭️ 문장 건너뛰기</button>
+      <button class="btn bs" onclick="skipSentence()" style="padding:14px 36px; font-size:15px; border-radius:99px; box-shadow:0 4px 12px rgba(0,0,0,0.05);">⏭️ 문장 건너뛰기 (Skip)</button>
     </div>
   </div>
 </div>
 
-<!-- ⑦ 결과 화면 -->
+<!-- ⑦ 결과 -->
 <div class="scr" id="s-result">
   <div class="card">
     <div class="rhero">
       <div class="rscore" id="rscore">0</div>
       <div class="rlbl">AVERAGE CPM (평균 타수)</div>
+      <div class="runit" id="runit"></div>
     </div>
     <div class="rgrid">
       <div class="ri"><div class="rv" id="r-correct" style="color:var(--success);">0</div><div class="rk">성공 문장</div></div>
       <div class="ri"><div class="rv" id="r-wrong" style="color:var(--accent2);">0</div><div class="rk">건너뛴 문장</div></div>
-      <div class="ri"><div class="rv" id="r-acc">0%</div><div class="rk">정확도</div></div>
+      <div class="ri"><div class="rv" id="r-acc">0%</div><div class="rk">정확도 (완성률)</div></div>
       <div class="ri"><div class="rv" id="r-total">0s</div><div class="rk">총 소요 시간</div></div>
     </div>
     <div id="ss-wrap"></div>
   </div>
+  <div class="card">
+    <div class="ct">문장별 상세 결과</div>
+    <div class="wrl" id="wrl"></div>
+  </div>
   <div class="br" style="margin-bottom:24px">
     <button class="btn bs" onclick="goto('s-lesson')">단원 변경</button>
     <button class="btn bs" onclick="retryGame()">다시 도전</button>
-    <button class="btn bv" onclick="goRankingFromResult()" style="margin-left:auto;">🏆 랭킹 보드 보기</button>
+    <button class="btn bv" onclick="goRankingFromResult()" style="margin-left:auto; padding-left:36px; padding-right:36px;">🏆 랭킹 보드 보기</button>
   </div>
 </div>
 
-<!-- ⑧ 순위 화면 -->
+<!-- ⑧ 순위 -->
 <div class="scr" id="s-ranking">
   <div class="card">
-    <div class="ct" style="margin-bottom:24px">랭킹 보드 (Firebase)</div>
+    <div class="ct" style="margin-bottom:24px">랭킹 보드</div>
+
     <div style="display:flex; justify-content:center;">
       <div class="rank-filters">
         <button class="tab-btn on" id="tab-class" onclick="setRankTab('class')">반별 순위</button>
@@ -406,31 +562,68 @@ window.addEventListener('DOMContentLoaded', () => {
         <button class="tab-btn" id="tab-all" onclick="setRankTab('all')">전체 순위</button>
       </div>
     </div>
+
     <div class="fg" style="margin-bottom:24px;">
       <label>단원 선택</label>
       <div class="select-wrap">
-        <select id="rank-lesson-select" onchange="setRankLesson(this.value)" style="color:var(--accent); border-color:rgba(2,132,199,0.25);">
-          <option value="">모든 단원 통합</option>
+        <select id="rank-lesson-select" onchange="setRankLesson(this.value)" style="font-family: var(--mono); font-weight: 800; color: var(--accent); background: rgba(2, 132, 199, 0.08); border-color: rgba(2, 132, 199, 0.25);">
+          <option value="">모든 단원 통합 보기</option>
         </select>
       </div>
     </div>
+
     <div id="grade-filter" class="sub-filter-row" style="display:none">
-      <label>학년</label><div class="select-wrap"><select id="sel-grade" onchange="renderRankTable()"></select></div>
+      <label>조회할 학년</label>
+      <div class="select-wrap">
+        <select id="sel-grade" onchange="renderRankTable()">
+          <option value="">전체 학년</option>
+        </select>
+      </div>
     </div>
+
     <div id="class-filter" class="sub-filter-row" style="display:none">
-      <label>학년</label><div class="select-wrap"><select id="sel-grade2" onchange="onGrade2Change()"></select></div>
-      <label>반</label><div class="select-wrap"><select id="sel-class" onchange="renderRankTable()"></select></div>
+      <label>학년</label>
+      <div class="select-wrap">
+        <select id="sel-grade2" onchange="onGrade2Change()">
+          <option value="">-- 선택 --</option>
+        </select>
+      </div>
+      <label style="margin-left:12px;">반</label>
+      <div class="select-wrap">
+        <select id="sel-class" onchange="renderRankTable()">
+          <option value="">-- 선택 --</option>
+        </select>
+      </div>
     </div>
-    <div id="rank-body"><div class="rank-loading">데이터를 불러오는 중...</div></div>
+
+    <div id="my-rank-badge" style="display:none">
+      <div class="my-rank-wrap">
+        <div>
+          <div class="my-rank-pos" id="my-rank-pos">—</div>
+          <div class="my-rank-lbl">내 최고 순위</div>
+        </div>
+        <div style="border-left:1px solid rgba(0,0,0,0.1);padding-left:24px;">
+          <div class="my-rank-nm" id="my-rank-nm">—</div>
+          <div class="my-rank-sc" id="my-rank-sc">—</div>
+          <div style="font-size:14px;color:var(--muted);margin-top:6px; font-weight:700;" id="my-rank-info">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="rank-body">
+      <div class="rank-loading"><span class="spinner"></span>데이터를 불러오는 중...</div>
+    </div>
   </div>
+
   <div class="br" style="margin-bottom:48px">
-    <button class="btn bs" onclick="goto('s-mode')">← 메인 화면</button>
-    <button class="btn bp" onclick="loadRankData()" style="margin-left:auto;">새로고침 ↺</button>
+    <button class="btn bs" onclick="goto('s-mode')">← 메인 화면으로</button>
+    <button class="btn bp" onclick="loadRankData()" style="margin-left:auto; background:linear-gradient(135deg, var(--accent3), #6d28d9); box-shadow:0 6px 16px rgba(124,58,237,.25);">데이터 새로고침 ↺</button>
   </div>
 </div>
 
-<footer style="text-align: center; padding: 40px 20px; color: var(--muted); font-size: 15px; font-weight:700;">
-  만든이: 곽현석(이의초등학교)<br>Copyright &copy; 2026 Eui Elementary School.
+<footer style="text-align: center; padding: 40px 20px 20px; margin-top: 20px; color: var(--muted); font-size: 15px; line-height: 1.8; letter-spacing: 0.5px; font-weight:700;">
+  만든이: 곽현석(이의초등학교)<br>
+  Copyright &copy; 2026 Eui Elementary School. All Rights Reserved.
 </footer>
 
 </div><!-- /wrap -->
@@ -439,7 +632,8 @@ window.addEventListener('DOMContentLoaded', () => {
 // ── 공통 헬퍼 ──
 function goto(id){
   document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
-  document.getElementById(id).classList.add('on');
+  const target = document.getElementById(id);
+  target.classList.add('on');
   window.scrollTo(0,0);
 }
 function parseSentences(txt){
@@ -449,15 +643,16 @@ function parseSentences(txt){
       return {sentence:l, meaning:''};
     });
 }
+function safeNum(v){ const n=Number(v); return isNaN(n)?0:n; }
 
 // ── 교사 모드 ──
 function doLogin(){
   const pw=document.getElementById('tpw').value;
-  if(pw === '초기화' || pw.toUpperCase() === 'RESET'){ localStorage.removeItem(K_PW); alert('1234로 초기화됨'); document.getElementById('tpw').value=''; return; }
+  if(pw === '초기화' || pw.toUpperCase() === 'RESET'){ localStorage.removeItem(K_PW); alert('초기화 완료 (1234)'); document.getElementById('tpw').value=''; return; }
   if(pw===(localStorage.getItem(K_PW)||'1234')){
     document.getElementById('tpw').value='';
     document.getElementById('school-input').value = document.getElementById('school-nm').textContent;
-    renderLessonList(); goto('s-teacher');
+    renderLessonList(); hideEditPanel(); goto('s-teacher');
   } else alert('비밀번호가 틀렸습니다.');
 }
 function resetPassword(){
@@ -465,16 +660,17 @@ function resetPassword(){
 }
 function changePw(){
   const p1=document.getElementById('npw1').value, p2=document.getElementById('npw2').value;
-  if(!p1 || p1!==p2){ alert('비밀번호를 확인하세요.'); return; }
-  localStorage.setItem(K_PW,p1); document.getElementById('npw1').value=''; document.getElementById('npw2').value=''; alert('변경됨');
+  if(!p1 || p1!==p2){ alert('비밀번호를 정확히 입력하세요.'); return; }
+  localStorage.setItem(K_PW,p1); document.getElementById('npw1').value=''; document.getElementById('npw2').value=''; alert('비밀번호 변경 완료');
 }
 
-let editIdx = -1;
 function renderLessonList(){
   const el=document.getElementById('lesson-list');
+  if(!lessons.length){ el.innerHTML='<div style="font-size:16px;color:var(--muted);padding:8px 0; font-weight:800;">등록된 단원이 없습니다.</div>'; return; }
   el.innerHTML=lessons.map((l,i)=>`
-    <div class="lesson-row" onclick="editLesson(${i})">
-      <span class="lesson-code">${l.code}</span><span class="lesson-name">${l.name}</span>
+    <div class="lesson-row ${editIdx===i?'active':''}" onclick="editLesson(${i})">
+      <span class="lesson-code">${l.code}</span>
+      <span class="lesson-name">${l.name||''}</span>
       <span class="lesson-cnt">${parseSentences(l.words).length}문장</span>
       <button class="lesson-del" onclick="event.stopPropagation();lessons.splice(${i},1);renderLessonList();">✕</button>
     </div>`).join('');
@@ -483,41 +679,51 @@ function addLesson(){
   const code=document.getElementById('new-code').value.trim().toUpperCase();
   const name=document.getElementById('new-name').value.trim();
   if(!code) return alert('단원 코드를 입력하세요.');
+  if(lessons.find(l=>l.code===code)) return alert('이미 존재하는 단원입니다.');
   lessons.push({code,name,words:''}); document.getElementById('new-code').value=''; document.getElementById('new-name').value='';
   renderLessonList(); editLesson(lessons.length-1);
 }
 function editLesson(i){
   editIdx = i; const l = lessons[i];
   document.getElementById('edit-badge').textContent = l.code;
+  document.getElementById('edit-title').textContent = l.name ? `— ${l.name}` : '';
   document.getElementById('word-input').value = l.words || '';
   document.getElementById('edit-panel').style.display='block';
+  renderLessonList();
+  document.getElementById('edit-panel').scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function hideEditPanel(){ document.getElementById('edit-panel').style.display='none'; editIdx=-1; }
 function saveLessonTemp(){
-  if(editIdx > -1){ lessons[editIdx].words = document.getElementById('word-input').value; renderLessonList(); alert("임시 저장됨"); }
+  if(editIdx > -1){ lessons[editIdx].words = document.getElementById('word-input').value.trim(); renderLessonList(); alert("이 단원이 임시 저장되었습니다.\n\n나중에 하단 [Firebase에 일괄 저장] 버튼을 꼭 눌러주세요."); }
+}
+function loadSample(){
+  document.getElementById('word-input').value = `I am a boy. : 나는 소년이다.\nThis is an apple. : 이것은 사과이다.\nHow are you today? : 오늘 기분 어때요?\nNice to meet you. : 만나서 반가워요.`;
 }
 
-// Firebase에 교사 설정 저장
+// ── Firebase DB 일괄 저장 ──
 async function saveToFirebase(){
-  const schoolName = document.getElementById('school-input').value;
+  const schoolName = document.getElementById('school-input').value.trim();
   const btn = document.getElementById('btn-save-firebase');
-  btn.textContent = "⏳ 저장 중...";
+  btn.textContent = "⏳ 클라우드에 기록 중..."; btn.disabled = true;
   try {
     await db.collection("settings").doc("main").set({ schoolName: schoolName, lessons: lessons });
     document.getElementById('school-nm').textContent = schoolName;
-    alert("Firebase에 완벽하게 저장되었습니다!");
+    alert("✨ [성공] 모든 설정이 Firebase에 저장되었습니다!\n학생들이 접속하면 바로 동기화됩니다.");
   } catch(e) {
-    alert("저장 에러: " + e.message);
+    alert("❌ 저장 에러: " + e.message);
   }
-  btn.textContent = "☁️ Firebase에 일괄 저장";
+  btn.textContent = "☁️ Firebase에 일괄 저장"; btn.disabled = false;
+  goto('s-mode');
 }
 
 // ── 학생 모드 ──
 function enterStudent(){
   const valid=lessons.filter(l=>parseSentences(l.words).length>0);
+  document.getElementById('bnr-warn').style.display=valid.length?'none':'flex';
   document.getElementById('lsel-grid').innerHTML=valid.map(l=>`
     <div class="lsel-card" id="lc-${l.code}" onclick="selectStudentLesson('${l.code}')">
-      <div class="lsel-code">${l.code}</div><div class="lsel-name">${l.name}</div>
+      <div class="lsel-code">${l.code}</div>
+      ${l.name?`<div class="lsel-name">${l.name}</div>`:''}
       <div class="lsel-cnt">${parseSentences(l.words).length}문장</div>
     </div>`).join('');
   selLesson=null; goto('s-lesson');
@@ -528,20 +734,21 @@ function selectStudentLesson(code){
   selLesson=lessons.find(l=>l.code===code);
 }
 function goToPlayer(){
-  if(!selLesson) return alert('단원을 선택하세요.');
+  if(!selLesson) return alert('도전할 단원을 선택하세요!');
   sentences=parseSentences(selLesson.words);
-  document.getElementById('sel-lesson-lbl').textContent = selLesson.code;
+  if(!sentences.length) return alert('이 단원에 문장이 없습니다.');
+  document.getElementById('sel-lesson-lbl').textContent = selLesson.name ? `${selLesson.code} — ${selLesson.name}` : selLesson.code;
   goto('s-player');
 }
 
-// ── 게임 로직 (문장용 타수 계산) ──
-let typedChars = 0; // 정확히 친 글자수
+// ── 문장 게임 로직 (CPM, 하이라이트) ──
+let typedChars = 0; // 정확히 친 글자수 (CPM 계산용)
 function startGame(){
   player = {
-    grade: document.getElementById('p-grade').value, class: document.getElementById('p-class').value,
-    number: document.getElementById('p-num').value, name: document.getElementById('p-name').value
+    grade: document.getElementById('p-grade').value.trim(), class: document.getElementById('p-class').value.trim(),
+    number: document.getElementById('p-num').value.trim(), name: document.getElementById('p-name').value.trim()
   };
-  if(!player.grade || !player.class || !player.name) return alert('정보를 다 입력하세요.');
+  if(!player.grade || !player.class || !player.name || !player.number) return alert('학년, 반, 번호, 이름을 모두 입력해주세요!');
   queue=[...sentences].sort(()=>Math.random()-.5);
   current=0; results=[]; typedChars=0; totalStart=Date.now();
   goto('s-game'); renderQ();
@@ -549,11 +756,14 @@ function startGame(){
 function retryGame(){ queue=[...sentences].sort(()=>Math.random()-.5); current=0; results=[]; typedChars=0; totalStart=Date.now(); goto('s-game'); renderQ(); }
 
 function renderQ(){
-  const q = queue[current];
-  document.getElementById('qcnt').textContent = `${String(current+1).padStart(2,'0')} / ${String(queue.length).padStart(2,'0')}`;
-  document.getElementById('qmean').textContent = q.meaning || "타이핑하세요";
-  document.getElementById('sv-left').textContent = queue.length - current;
-  document.getElementById('prog').style.width = (current/queue.length*100)+'%';
+  const card=document.getElementById('game-card');
+  card.style.animation='none'; void card.offsetWidth; card.style.animation='screenIn .4s cubic-bezier(0.16,1,0.3,1) forwards';
+  
+  const q = queue[current], tot = queue.length;
+  document.getElementById('qcnt').textContent = `${String(current+1).padStart(2,'0')} / ${String(tot).padStart(2,'0')}`;
+  document.getElementById('qmean').textContent = q.meaning || "위 문장을 똑같이 타이핑하세요";
+  document.getElementById('sv-left').textContent = tot - current;
+  document.getElementById('prog').style.width = (current/tot*100)+'%';
   
   const inp = document.getElementById('tinput');
   inp.value=''; inp.disabled=false; inp.className='tinput'; inp.focus();
@@ -561,7 +771,6 @@ function renderQ(){
   qStart = Date.now(); startTimer();
 }
 
-// 핵심: 문장 실시간 하이라이팅
 function updateSentenceDisplay(typedVal) {
   const target = queue[current].sentence;
   let html = '';
@@ -583,34 +792,35 @@ document.getElementById('tinput').addEventListener('input', function() {
   updateSentenceDisplay(this.value);
   const target = queue[current].sentence;
   
-  // 현재 타수(CPM) 계산: 맞게 친 글자수 / 경과시간(분)
-  const elapsedMinutes = (Date.now() - qStart) / 60000;
+  // 현재 문장 타수 계산 로직
+  const elapsedMin = (Date.now() - qStart) / 60000;
   let correctCount = 0;
   for(let i=0; i<this.value.length; i++) { if(this.value[i] === target[i]) correctCount++; }
   
-  if(elapsedMinutes > 0) {
-    const cpm = Math.round(correctCount / elapsedMinutes);
+  if(elapsedMin > 0) {
+    const cpm = Math.round(correctCount / elapsedMin);
     document.getElementById('sv-score').textContent = cpm > 0 ? cpm : 0;
   }
 
-  // 문장 완성 확인
+  // 문장 완성
   if(this.value === target) {
     this.disabled = true; this.className = 'tinput cor';
     clearInterval(timer);
     const elapsedSec = (Date.now() - qStart) / 1000;
     const finalCpm = Math.round(target.length / (elapsedSec / 60));
-    typedChars += target.length;
+    typedChars += target.length; // 누적 타이핑 수 저장
     
-    results.push({sentence: target, correct: true, cpm: finalCpm, time: elapsedSec});
+    results.push({sentence: target, meaning: queue[current].meaning, correct: true, cpm: finalCpm, time: elapsedSec});
     setTimeout(() => { current++; current >= queue.length ? endGame() : renderQ(); }, 400);
   }
 });
 
-function skipWord(){
+function skipSentence(){
   clearInterval(timer);
   const target = queue[current].sentence;
-  results.push({sentence: target, correct: false, cpm: 0, time: (Date.now()-qStart)/1000});
-  document.getElementById('tinput').className = 'tinput wrg';
+  results.push({sentence: target, meaning: queue[current].meaning, correct: false, cpm: 0, time: (Date.now()-qStart)/1000});
+  const inp = document.getElementById('tinput');
+  inp.className = 'tinput wrg'; inp.value = "SKIPPED...";
   setTimeout(() => { current++; current >= queue.length ? endGame() : renderQ(); }, 400);
 }
 
@@ -626,34 +836,45 @@ async function endGame(){
   clearInterval(timer);
   const totalSec = (Date.now() - totalStart) / 1000;
   const cc = results.filter(r=>r.correct).length;
-  // 전체 평균 타수 (Total Characters / Total Minutes)
+  // 전체 평균 CPM 계산
   const avgCpm = totalSec > 0 ? Math.round(typedChars / (totalSec / 60)) : 0;
-  const accuracy = Math.round((cc / queue.length) * 100);
+  const accuracy = Math.round((cc / queue.length) * 100) || 0;
   
-  lastScore = { grade: player.grade, class: player.class, lesson: selLesson };
+  lastScore = { grade: player.grade, class: player.class, number: player.number, name: player.name, lesson: selLesson, cpm: avgCpm };
 
   document.getElementById('rscore').textContent = avgCpm;
   document.getElementById('r-correct').textContent = cc;
   document.getElementById('r-wrong').textContent = queue.length - cc;
   document.getElementById('r-acc').textContent = accuracy + '%';
   document.getElementById('r-total').textContent = totalSec.toFixed(1) + 's';
-  document.getElementById('runit').textContent = selLesson.code;
+  document.getElementById('runit').textContent = selLesson.name ? `${selLesson.code} — ${selLesson.name}` : selLesson.code;
   
+  // 리스트 출력
+  document.getElementById('wrl').innerHTML = results.map((r,i)=>`
+    <div class="wrr ${r.correct?'ok':'ng'}">
+      <span class="wn">${String(i+1).padStart(2,'0')}</span>
+      <span style="color:${r.correct?'var(--success)':'var(--accent2)'}; font-weight:800;">${r.correct?'✓':'✗'}</span>
+      <span class="ww">${r.sentence}</span>
+      <span class="wm">${r.meaning}</span>
+      <span class="wt">${r.correct ? r.cpm+' CPM' : '0 CPM'}</span>
+    </div>`).join('');
+
+  document.getElementById('prog').style.width = '100%';
   const el = document.getElementById('ss-wrap');
-  el.innerHTML='<div class="ss">⏳ Firebase 랭킹 저장 중...</div>';
+  el.innerHTML='<div class="ss">⏳ Firebase 랭킹 서버에 점수 기록 중...</div>';
   goto('s-result');
 
-  // Firebase 기록 전송
+  // Firebase에 최종 기록 전송
   try {
     await db.collection("rankings").add({
-      date: new Date().toLocaleString(),
+      date: new Date().toLocaleString('ko-KR'),
       grade: Number(player.grade), class: Number(player.class), number: Number(player.number), name: player.name,
       lesson: selLesson.code,
       cpm: avgCpm, accuracy: accuracy, time: totalSec
     });
     el.innerHTML='<div class="ss ok">✓ Firebase 서버 랭킹 등록 완료!</div>';
   } catch(e) {
-    el.innerHTML=`<div class="ss err">✗ 저장 실패: ${e.message}</div>`;
+    el.innerHTML=`<div class="ss err">✗ 랭킹 저장 실패: ${e.message}</div>`;
   }
 }
 
@@ -664,82 +885,125 @@ function goRankingFromResult(){ initRanking(); }
 function initRanking(){
   rankTab='class'; 
   rankLesson = (lastScore && lastScore.lesson) ? lastScore.lesson.code : '';
-  const sel = document.getElementById('rank-lesson-select');
-  sel.innerHTML = `<option value="">모든 단원</option>` + lessons.map(l=>`<option value="${l.code}">${l.code}</option>`).join('');
-  sel.value = rankLesson;
+  rankData=[];
+  buildLessonDropdown();
   
   ['class','grade','all'].forEach(t=>document.getElementById('tab-'+t).classList.toggle('on',t==='class'));
   document.getElementById('grade-filter').style.display='none';
   document.getElementById('class-filter').style.display='flex';
+  document.getElementById('my-rank-badge').style.display='none';
   goto('s-ranking'); loadRankData();
 }
-function setRankTab(t){ rankTab=t; initRanking(); } // 간단히 재시작
+
+function buildLessonDropdown(){
+  const validLessons=lessons.filter(l=>parseSentences(l.words).length>0);
+  const sel = document.getElementById('rank-lesson-select');
+  sel.innerHTML = `<option value="">모든 단원 통합 보기</option>` + validLessons.map(l=>`<option value="${l.code}">${l.code}${l.name?' — '+l.name:''}</option>`).join('');
+  sel.value = rankLesson;
+}
 function setRankLesson(v){ rankLesson=v; renderRankTable(); }
+function setRankTab(t){
+  rankTab=t;
+  ['class','grade','all'].forEach(k=>document.getElementById('tab-'+k).classList.toggle('on',k===t));
+  document.getElementById('grade-filter').style.display = t==='grade'?'flex':'none';
+  document.getElementById('class-filter').style.display = t==='class'?'flex':'none';
+  renderRankTable();
+}
 
 async function loadRankData(){
   const body = document.getElementById('rank-body');
-  body.innerHTML='<div class="rank-loading">데이터 불러오는 중...</div>';
+  body.innerHTML='<div class="rank-loading"><span class="spinner"></span>데이터를 불러오는 중...</div>';
   try {
     const snapshot = await db.collection("rankings").get();
     rankData = [];
     snapshot.forEach(doc => rankData.push(doc.data()));
     
     // 학년/반 콤보박스 세팅
-    const grades = [...new Set(rankData.map(r=>r.grade))].sort((a,b)=>a-b);
+    const grades = [...new Set(rankData.map(r=>String(r.grade)))].sort((a,b)=>Number(a)-Number(b));
     const gs=document.getElementById('sel-grade'), gs2=document.getElementById('sel-grade2');
-    gs.innerHTML='<option value="">학년 선택</option>'+grades.map(g=>`<option value="${g}">${g}학년</option>`).join('');
-    gs2.innerHTML='<option value="">학년 선택</option>'+grades.map(g=>`<option value="${g}">${g}학년</option>`).join('');
+    [gs, gs2].forEach(el => {
+      el.innerHTML = '<option value="">-- 학년 선택 --</option>' + grades.map(g=>`<option value="${g}">${g}학년</option>`).join('');
+    });
     
-    if(lastScore) { gs2.value = lastScore.grade; onGrade2Change(false); document.getElementById('sel-class').value = lastScore.class; }
+    if(lastScore) { 
+      if([...gs.options].some(o=>o.value===String(lastScore.grade))) gs.value = String(lastScore.grade);
+      if([...gs2.options].some(o=>o.value===String(lastScore.grade))) {
+        gs2.value = String(lastScore.grade);
+        onGrade2Change(false);
+        const cs = document.getElementById('sel-class');
+        if([...cs.options].some(o=>o.value===String(lastScore.class))) cs.value = String(lastScore.class);
+      }
+    }
     renderRankTable();
   } catch(e) {
-    body.innerHTML=`<div class="rank-empty">오류: ${e.message}</div>`;
+    body.innerHTML=`<div class="rank-empty">오류가 발생했습니다: ${e.message}</div>`;
   }
 }
 
-function onGrade2Change(render=true){
+function onGrade2Change(trigger=true){
   const g = document.getElementById('sel-grade2').value;
-  const classes = [...new Set(rankData.filter(r=>r.grade==g).map(r=>r.class))].sort((a,b)=>a-b);
-  document.getElementById('sel-class').innerHTML='<option value="">반 선택</option>'+classes.map(c=>`<option value="${c}">${c}반</option>`).join('');
-  if(render) renderRankTable();
+  const classes = [...new Set(rankData.filter(r=>String(r.grade)===g).map(r=>String(r.class)))].sort((a,b)=>Number(a)-Number(b));
+  document.getElementById('sel-class').innerHTML='<option value="">-- 반 선택 --</option>' + classes.map(c=>`<option value="${c}">${c}반</option>`).join('');
+  if(trigger) renderRankTable();
 }
 
 function renderRankTable(){
+  const body = document.getElementById('rank-body');
   let rows = [...rankData];
-  if(rankLesson) rows = rows.filter(r=>r.lesson === rankLesson);
-  
+
+  if(rankLesson) {
+    rows = rows.filter(r=>r.lesson === rankLesson);
+    if(!rows.length) { document.getElementById('my-rank-badge').style.display='none'; return body.innerHTML='<div class="rank-empty">📭 이 단원의 기록이 아직 없습니다.</div>'; }
+  }
+
   if(rankTab==='grade') {
     const g = document.getElementById('sel-grade').value;
-    if(!g) return document.getElementById('rank-body').innerHTML='<div class="rank-empty">학년을 선택하세요</div>';
-    rows = rows.filter(r=>r.grade == g);
+    if(!g) { document.getElementById('my-rank-badge').style.display='none'; return body.innerHTML='<div class="rank-empty">👆 위에서 조회할 학년을 선택해주세요.</div>'; }
+    rows = rows.filter(r=>String(r.grade) === g);
   } else if(rankTab==='class') {
     const g = document.getElementById('sel-grade2').value, c = document.getElementById('sel-class').value;
-    if(!g||!c) return document.getElementById('rank-body').innerHTML='<div class="rank-empty">학년과 반을 선택하세요</div>';
-    rows = rows.filter(r=>r.grade==g && r.class==c);
+    if(!g||!c) { document.getElementById('my-rank-badge').style.display='none'; return body.innerHTML='<div class="rank-empty">👆 위에서 학년과 반을 모두 선택해주세요.</div>'; }
+    rows = rows.filter(r=>String(r.grade)===g && String(r.class)===c);
   }
   
-  // 최고 기록만 필터링 (동일인 중 CPM 가장 높은 것)
+  if(!rows.length){ document.getElementById('my-rank-badge').style.display='none'; return body.innerHTML='<div class="rank-empty">📭 해당 조건의 데이터가 없습니다.</div>'; }
+
+  // 동일 학생 최고 CPM 
   const best={};
   rows.forEach(r=>{
     const k = `${r.grade}_${r.class}_${r.number}_${r.name}`;
-    if(!best[k] || r.cpm > best[k].cpm) best[k]=r;
+    const cpm = safeNum(r.cpm);
+    if(!best[k] || cpm > safeNum(best[k].cpm)) best[k]=r;
   });
-  const ranked = Object.values(best).sort((a,b)=>b.cpm - a.cpm);
+  const ranked = Object.values(best).sort((a,b)=>safeNum(b.cpm) - safeNum(a.cpm));
   
-  if(!ranked.length) return document.getElementById('rank-body').innerHTML='<div class="rank-empty">기록이 없습니다.</div>';
-  
+  const badge=document.getElementById('my-rank-badge');
+  if(lastScore){
+    const myKey=`${lastScore.grade}_${lastScore.class}_${lastScore.number}_${lastScore.name}`;
+    const myIdx=ranked.findIndex(r=>`${r.grade}_${r.class}_${r.number}_${r.name}`===myKey);
+    if(myIdx>=0){
+      badge.style.display='flex';
+      document.getElementById('my-rank-pos').textContent=`${myIdx+1}위`;
+      document.getElementById('my-rank-nm').textContent=`${lastScore.name} (${lastScore.grade}학년 ${lastScore.class}반)`;
+      document.getElementById('my-rank-sc').textContent=`${lastScore.cpm} CPM`;
+      document.getElementById('my-rank-info').textContent=`전체 ${ranked.length}명 중`;
+    } else badge.style.display='none';
+  } else badge.style.display='none';
+
   const medals=['🥇','🥈','🥉'];
-  document.getElementById('rank-body').innerHTML = `
+  body.innerHTML = `
     <table class="rank-table">
-      <thead><tr><th>순위</th><th>이름/정보</th><th style="text-align:right">CPM</th></tr></thead>
+      <thead><tr><th style="width:60px; text-align:center;">순위</th><th>이름</th><th>정보</th><th style="text-align:right">타수(CPM)</th></tr></thead>
       <tbody>
-        ${ranked.map((r,i)=>`
-          <tr>
+        ${ranked.map((r,i)=>{
+          const isMe=lastScore && r.name===lastScore.name && r.grade==lastScore.grade && r.class==lastScore.class && r.number==lastScore.number;
+          return `<tr class="rank-${i<3?i+1:''} ${isMe?'me':''}">
             <td><span class="rank-num">${medals[i]||(i+1)}</span></td>
-            <td><div class="rank-name">${r.name}</div><div class="rank-info">${r.grade}학년 ${r.class}반 ${r.number}번</div></td>
-            <td class="rank-score">${r.cpm}</td>
-          </tr>
-        `).join('')}
+            <td class="rank-name">${r.name}</td>
+            <td class="rank-info">${r.grade}학년 ${r.class}반 ${r.number}번</td>
+            <td class="rank-score">${safeNum(r.cpm)}</td>
+          </tr>`;
+        }).join('')}
       </tbody>
     </table>
   `;
