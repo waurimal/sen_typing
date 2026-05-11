@@ -375,8 +375,8 @@ const firebaseConfig = {
     measurementId: "G-98XC1DFR0M"
 };
 
-// 금칙어 목록 정의 (욕설 및 비속어 필터링)
-const FORBIDDEN_WORDS = [
+// 금칙어 목록 정의 (초기 기본값, Firebase에서 덮어씌워짐)
+let forbiddenWords = [
   '씨발', '시발', '개새끼', '개새기', '지랄', '병신', '빙신', '존나', '썅', '미친',
   '좆', '새끼', '바보', '멍청이', '느금마', '애미', '애비', '니미'
 ];
@@ -403,6 +403,9 @@ async function fetchFirebaseData() {
       const data = docSnap.data();
       document.getElementById('school-nm').textContent = data.schoolName || '';
       lessons = data.lessons || [];
+      if (data.forbiddenWords) {
+        forbiddenWords = data.forbiddenWords;
+      }
     }
   } catch(e) {
     console.log("Firebase 데이터를 불러오는데 실패했습니다.", e);
@@ -481,6 +484,14 @@ window.addEventListener('DOMContentLoaded', () => {
   </div>
 
   <div class="card tc">
+    <div class="ct t">비속어 관리 (금칙어)</div>
+    <div class="fg" style="margin-bottom:0">
+      <label>학생 이름 입력 시 차단할 단어 (쉼표로 구분)</label>
+      <textarea id="forbidden-words-input" placeholder="씨발, 시발, 개새끼..." style="min-height: 100px; padding: 16px; font-family: var(--sans);"></textarea>
+    </div>
+  </div>
+
+  <div class="card tc">
     <div class="ct t">단원 및 문장 관리</div>
     <div class="lesson-list" id="lesson-list"></div>
     <div style="border-top:1px solid rgba(0,0,0,0.08);padding-top:24px;margin-top:16px;">
@@ -526,7 +537,7 @@ window.addEventListener('DOMContentLoaded', () => {
   <div class="card" style="background: #ffffff; border: 1px solid rgba(14,165,233,.2); box-shadow:0 12px 30px rgba(14,165,233,0.08);">
     <div style="font-size: 16px; line-height: 1.8; color: var(--text); text-align: center; margin-bottom: 28px; font-weight:500;">
       <strong style="color:var(--accent); font-size:20px; display:block; margin-bottom:12px; font-weight:800;">[☁️ Firebase에 설정 일괄 저장]</strong>
-      단원과 문장을 모두 추가/수정했다면 아래 버튼을 누르세요.<br>
+      단원, 문장, 학교명, 비속어 목록을 수정했다면 아래 버튼을 누르세요.<br>
       저장하는 즉시 학생들의 앱에 <strong>실시간으로 동기화</strong>됩니다.
     </div>
     <div style="display:flex; gap:16px; width: 100%;">
@@ -882,6 +893,7 @@ function doLogin(){
   if(pw===(localStorage.getItem(K_PW)||'1234')){
     document.getElementById('tpw').value='';
     document.getElementById('school-input').value = document.getElementById('school-nm').textContent;
+    document.getElementById('forbidden-words-input').value = forbiddenWords.join(', '); // 비속어 목록 채우기
     renderLessonList(); hideEditPanel(); toggleDeleteInputs(); goto('s-teacher');
   } else alert('비밀번호가 틀렸습니다.');
 }
@@ -933,11 +945,19 @@ function loadSample(){
 // ── Firebase DB 일괄 저장 ──
 async function saveToFirebase(){
   const schoolName = document.getElementById('school-input').value.trim();
+  const forbiddenInput = document.getElementById('forbidden-words-input').value;
+  const newForbiddenWords = forbiddenInput.split(',').map(w => w.trim()).filter(w => w.length > 0);
+
   const btn = document.getElementById('btn-save-firebase');
   btn.textContent = "⏳ 클라우드에 기록 중..."; btn.disabled = true;
   try {
-    await db.collection("settings").doc("main").set({ schoolName: schoolName, lessons: lessons });
+    await db.collection("settings").doc("main").set({ 
+      schoolName: schoolName, 
+      lessons: lessons,
+      forbiddenWords: newForbiddenWords // 비속어 목록 저장 추가
+    });
     document.getElementById('school-nm').textContent = schoolName;
+    forbiddenWords = newForbiddenWords; // 로컬 변수 업데이트
     alert("✨ [성공] 모든 설정이 Firebase에 저장되었습니다!\n학생들이 접속하면 바로 동기화됩니다.");
   } catch(e) {
     alert("❌ 저장 에러: " + e.message);
@@ -1251,8 +1271,8 @@ function startGame(){
     return alert('학년, 반, 번호, 이름을 모두 선택/입력해주세요!');
   }
 
-  // 욕설 및 비속어 필터링 검사
-  for (let word of FORBIDDEN_WORDS) {
+  // 욕설 및 비속어 필터링 검사 (전역 변수 forbiddenWords 사용)
+  for (let word of forbiddenWords) {
     if (player.name.includes(word)) {
       document.getElementById('p-name').value = ''; // 입력란 초기화
       return alert('이름에 부적절한 단어는 사용할 수 없습니다. 바른 말을 사용해 주세요!');
