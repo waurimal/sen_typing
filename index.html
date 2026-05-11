@@ -375,6 +375,12 @@ const firebaseConfig = {
     measurementId: "G-98XC1DFR0M"
 };
 
+// 금칙어 목록 정의 (욕설 및 비속어 필터링)
+const FORBIDDEN_WORDS = [
+  '씨발', '시발', '개새끼', '개새기', '지랄', '병신', '빙신', '존나', '썅', '미친',
+  '좆', '새끼', '바보', '멍청이', '느금마', '애미', '애비', '니미'
+];
+
 // Firebase 초기화
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
@@ -602,7 +608,7 @@ window.addEventListener('DOMContentLoaded', () => {
       </div>
       <div class="actions">
         <button class="btn bv" onclick="downloadCSV()" style="padding: 12px 24px; font-size: 14px; box-shadow:none;">⬇️ CSV 다운로드</button>
-        <button class="btn bs" onclick="deleteFilteredRecords()" style="padding: 12px 24px; font-size: 14px; background:rgba(225,29,72,0.1); color:var(--accent2); border-color:rgba(225,29,72,0.3);">🗑️ 데이터 초기화</button>
+        <button class="btn bs" onclick="goto('s-teacher')" style="padding: 12px 24px; font-size: 14px; background:rgba(225,29,72,0.1); color:var(--accent2); border-color:rgba(225,29,72,0.3);">🗑️ 데이터 초기화 이동</button>
       </div>
     </div>
 
@@ -619,7 +625,7 @@ window.addEventListener('DOMContentLoaded', () => {
             <th>학생 정보</th>
             <th>정확도</th>
             <th>최종 점수</th>
-            <th>상세 기록</th>
+            <th>상세 기록 / 삭제</th>
           </tr>
         </thead>
         <tbody id="rec-tbody">
@@ -1071,14 +1077,34 @@ function renderTeacherRecords() {
         <td><span class="${accClass}">${acc}%</span></td>
         <td style="font-family:var(--mono); font-weight:800; color:var(--text); text-align:right; padding-right:30px;">${finalScore}점</td>
         <td>
-          <button class="btn bs" style="padding:6px 14px; font-size:13px; font-weight:700; border-radius:8px;" onclick="showStudentDetails('${r.id}')">상세보기</button>
+          <div style="display:flex; gap:8px; justify-content:center;">
+            <button class="btn bs" style="padding:6px 14px; font-size:13px; font-weight:700; border-radius:8px;" onclick="showStudentDetails('${r.id}')">상세보기</button>
+            <button class="btn bs" style="padding:6px 14px; font-size:13px; font-weight:700; border-radius:8px; color:var(--accent2); background:rgba(225,29,72,0.05); border-color:rgba(225,29,72,0.3);" onclick="deleteSingleRecord('${r.id}')">삭제</button>
+          </div>
         </td>
       </tr>
     `;
   }).join('');
 }
 
-// 학생 상세 보기 (모달) - 캡처해주신 이미지와 같이 직관적인 디자인으로 복구
+// ── 개별 학생 기록 삭제 기능 ──
+async function deleteSingleRecord(recordId) {
+  if(!confirm("이 학생의 기록을 정말로 삭제하시겠습니까?\n삭제 후에는 절대 복구할 수 없습니다.")) return;
+
+  try {
+    await db.collection("rankings").doc(recordId).delete();
+    
+    // 로컬 배열에서도 데이터 삭제 후 갱신
+    teacherRecords = teacherRecords.filter(r => r.id !== recordId);
+    renderTeacherRecords();
+    
+    alert("기록이 성공적으로 삭제되었습니다.");
+  } catch(error) {
+    alert("데이터 삭제 중 오류가 발생했습니다: " + error.message);
+  }
+}
+
+// 학생 상세 보기 (모달)
 function showStudentDetails(recordId) {
   const rec = teacherRecords.find(r => r.id === recordId);
   if(!rec || !rec.details || rec.details.length === 0) {
@@ -1091,18 +1117,15 @@ function showStudentDetails(recordId) {
   rec.details.forEach((d, i) => {
     let typedHtml = '';
     
-    // 이전 버전(단어 게임)과 신버전(문장 게임)의 데이터 구조 차이로 인한 에러 완벽 방지
     const target = d.sentence || d.word || '정답 문장 없음';
     const typed = d.typed || '';
 
     try {
-      // 글자별 정답/오답 하이라이트
       for(let j=0; j<Math.max(target.length, typed.length); j++) {
         if (j < typed.length) {
           if(typed[j] === target[j]) {
             typedHtml += `<span class="ok">${typed[j]}</span>`;
           } else {
-            // 오답인 경우 붉은색 배경 (띄어쓰기는 언더스코어로 명확히 표시)
             typedHtml += `<span class="ng">${typed[j] === ' ' ? '_' : typed[j]}</span>`;
           }
         }
@@ -1112,7 +1135,6 @@ function showStudentDetails(recordId) {
     }
 
     const isOk = d.correct;
-    // 번호를 추가하여 직관적으로 알 수 있게 변경
     const statusHtml = isOk ? `<div class="detail-status ok">${i+1}. ✅ 성공</div>` : `<div class="detail-status ng">${i+1}. ❌ 건너뜀 (실패)</div>`;
 
     html += `
@@ -1224,7 +1246,19 @@ function startGame(){
     number: document.getElementById('p-num').value.trim(), name: document.getElementById('p-name').value.trim(),
     diff: Number(document.getElementById('p-diff').value) || 1
   };
-  if(!player.grade || !player.class || !player.name || !player.number) return alert('학년, 반, 번호, 이름을 모두 선택/입력해주세요!');
+  
+  if(!player.grade || !player.class || !player.name || !player.number) {
+    return alert('학년, 반, 번호, 이름을 모두 선택/입력해주세요!');
+  }
+
+  // 욕설 및 비속어 필터링 검사
+  for (let word of FORBIDDEN_WORDS) {
+    if (player.name.includes(word)) {
+      document.getElementById('p-name').value = ''; // 입력란 초기화
+      return alert('이름에 부적절한 단어는 사용할 수 없습니다. 바른 말을 사용해 주세요!');
+    }
+  }
+
   queue=[...sentences].sort(()=>Math.random()-.5);
   current=0; results=[]; typedChars=0; totalStart=Date.now();
   goto('s-game'); renderQ();
