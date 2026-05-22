@@ -1331,7 +1331,19 @@ function updateSentenceDisplay(typedVal) {
   document.getElementById('sentence-display').innerHTML = html;
 }
 
-document.getElementById('tinput').addEventListener('input', function() {
+const tinputEl = document.getElementById('tinput');
+
+// 🔥 붙여넣기 및 드래그 앤 드롭 금지 이벤트 리스너 추가
+tinputEl.addEventListener('paste', function(e) {
+  e.preventDefault(); // 붙여넣기 차단
+  alert('붙여넣기는 사용할 수 없습니다. 직접 타이핑해 주세요!');
+});
+
+tinputEl.addEventListener('drop', function(e) {
+  e.preventDefault(); // 드래그 앤 드롭 차단
+});
+
+tinputEl.addEventListener('input', function() {
   if(isProcessing) return; // 이미 처리중이면 차단
   
   updateSentenceDisplay(this.value);
