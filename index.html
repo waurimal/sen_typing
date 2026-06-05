@@ -433,16 +433,11 @@ window.addEventListener('DOMContentLoaded', () => {
 <!-- ① 모드 선택 -->
 <div class="scr on" id="s-mode">
   <div class="card" style="padding: 30px 24px;">
-    <div class="msel">
+    <div class="msel" style="grid-template-columns: 1fr;"> <!-- 1열로 변경하여 게임 시작 버튼을 가운데로 정렬 -->
       <div class="mbtn sb" onclick="enterStudent()">
         <div class="mico">🎮</div>
         <div class="mlbl">게임 시작</div>
         <div class="mdsc">단원 선택 후<br>바로 타이핑 도전!</div>
-      </div>
-      <div class="mbtn rb" onclick="enterRanking()">
-        <div class="mico">🏆</div>
-        <div class="mlbl">순위 확인</div>
-        <div class="mdsc">우리 반, 학년,<br>전체 랭킹 보기</div>
       </div>
     </div>
     <div style="text-align: center; padding-top: 20px; border-top: 1px solid rgba(0,0,0,0.08);">
