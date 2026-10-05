@@ -961,6 +961,12 @@
 
         // 확실한 화면 전환 유틸
         window.showScreen = (screenId) => {
+            if (screenId === 'screen-teacher') {
+                if (!window.WaurimalAuth || !window.WaurimalAuth.isAuthenticated()) {
+                    window.openTeacherAuthModal();
+                    return;
+                }
+            }
             const screens = ['screen-home', 'screen-game', 'screen-result', 'screen-teacher'];
             screens.forEach(id => {
                 const el = document.getElementById(id);
@@ -1525,6 +1531,9 @@
                 else if (rank === 3) rankBadge = '<span class="text-xl">🥉</span>';
 
                 const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleDateString('ko-KR', { year: '2-digit', month: 'numeric', day: 'numeric' }) : '-';
+                const safeName = window.WaurimalSanitize ? window.WaurimalSanitize(item.maskedName || '') : (item.maskedName || '');
+                const safeUnit = window.WaurimalSanitize ? window.WaurimalSanitize(item.unit || '') : (item.unit || '');
+                const safeSchool = window.WaurimalSanitize ? window.WaurimalSanitize(item.schoolInfo || '') : (item.schoolInfo || '');
 
                 return `
                     <div class="flex items-center justify-between p-2.5 bg-white border border-rose-100 rounded-xl hover:border-rose-300 transition shadow-2xs">
@@ -1534,11 +1543,11 @@
                             </div>
                             <div>
                                 <div class="font-black text-slate-800 text-xs flex items-center gap-1.5">
-                                    <span>${item.maskedName}</span>
-                                    <span class="text-[10px] bg-rose-50 text-rose-700 px-1.5 py-0.5 rounded font-bold">${item.unit}</span>
+                                    <span>${safeName}</span>
+                                    <span class="text-[10px] bg-rose-50 text-rose-700 px-1.5 py-0.5 rounded font-bold">${safeUnit}</span>
                                 </div>
                                 <div class="text-[10px] text-slate-400 font-medium">
-                                    ${item.schoolInfo ? item.schoolInfo + ' • ' : ''}${item.cpm}타/분 • ${dateStr}
+                                    ${safeSchool ? safeSchool + ' • ' : ''}${item.cpm}타/분 • ${dateStr}
                                 </div>
                             </div>
                         </div>
@@ -1555,6 +1564,11 @@
         // ── 4. 교사 전용 관리 화면 (22개 단원 + CSV + 학급 삭제) ──
         // ════════════════════════════════════════════════════════════════════
         window.openTeacherAuthModal = () => {
+            if (window.WaurimalAuth && window.WaurimalAuth.isAuthenticated()) {
+                window.showScreen('screen-teacher');
+                switchTeacherTab('lessons');
+                return;
+            }
             document.getElementById('teacherPwInput').value = '';
             document.getElementById('modal-teacher-auth').classList.remove('hidden');
         };
@@ -1564,8 +1578,8 @@
 
         window.verifyTeacher = () => {
             const input = document.getElementById('teacherPwInput').value.trim();
-            const savedPw = localStorage.getItem('waurimal_admin_pw') || localStorage.getItem('str_pw') || '1234';
-            if (input === savedPw || input === "4657" || input === "wauri1234" || input === "1234" || input === "0000") {
+            const authOk = window.WaurimalAuth ? window.WaurimalAuth.authenticate(input) : (input === (localStorage.getItem('waurimal_admin_pw') || '1234'));
+            if (authOk) {
                 closeTeacherAuthModal();
                 window.showScreen('screen-teacher');
                 switchTeacherTab('lessons');
@@ -1672,19 +1686,24 @@
             }
 
             const sorted = [...hofAllScores].sort((a,b) => b.score - a.score);
-            tbody.innerHTML = sorted.map((s, idx) => `
+            tbody.innerHTML = sorted.map((s, idx) => {
+                const safeName = window.WaurimalSanitize ? window.WaurimalSanitize(s.maskedName || '') : (s.maskedName || '');
+                const safeSchool = window.WaurimalSanitize ? window.WaurimalSanitize(s.schoolInfo || '-') : (s.schoolInfo || '-');
+                const safeUnit = window.WaurimalSanitize ? window.WaurimalSanitize(s.unit || '') : (s.unit || '');
+                return `
                 <tr class="hover:bg-rose-50/50 transition">
                     <td class="p-2.5 font-bold">${idx + 1}</td>
-                    <td class="p-2.5 font-black text-slate-800">${s.maskedName}</td>
-                    <td class="p-2.5 font-semibold text-slate-600">${s.schoolInfo || '-'}</td>
-                    <td class="p-2.5 font-semibold text-rose-700">${s.unit}</td>
+                    <td class="p-2.5 font-black text-slate-800">${safeName}</td>
+                    <td class="p-2.5 font-semibold text-slate-600">${safeSchool}</td>
+                    <td class="p-2.5 font-semibold text-rose-700">${safeUnit}</td>
                     <td class="p-2.5 font-black text-rose-600">${s.score.toLocaleString()}점</td>
                     <td class="p-2.5 font-bold text-slate-700">${s.cpm}타/분</td>
                     <td class="p-2.5 font-bold text-emerald-600">${s.accuracy}%</td>
                     <td class="p-2.5 font-medium text-slate-500">${s.time}초</td>
                     <td class="p-2.5 text-slate-400 text-[11px]">${s.dateStr}</td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
         }
 
         window.downloadTypingScoresCSV = () => {
@@ -1714,8 +1733,12 @@
                 showAlert("비밀번호는 최소 4자리 이상이어야 합니다.");
                 return;
             }
+            if (window.WaurimalAuth) {
+                window.WaurimalAuth.setPw(input);
+            } else {
+                localStorage.setItem('waurimal_admin_pw', input);
+            }
             localStorage.setItem('str_pw', input);
-            localStorage.setItem('waurimal_admin_pw', input);
             document.getElementById('newTeacherPwInput').value = '';
             showAlert("교사 비밀번호가 성공적으로 변경되었습니다.");
         };
