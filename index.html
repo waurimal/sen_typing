@@ -1531,7 +1531,7 @@
                 else if (rank === 3) rankBadge = '<span class="text-xl">🥉</span>';
 
                 const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleDateString('ko-KR', { year: '2-digit', month: 'numeric', day: 'numeric' }) : '-';
-                const safeName = window.WaurimalSanitize ? window.WaurimalSanitize(item.maskedName || '') : (item.maskedName || '');
+                const safeName = window.WaurimalSanitize ? window.WaurimalSanitize(item.maskedName || maskStudentName(item.name || '학생')) : (item.maskedName || maskStudentName(item.name || '학생'));
                 const safeUnit = window.WaurimalSanitize ? window.WaurimalSanitize(item.unit || '') : (item.unit || '');
                 const safeSchool = window.WaurimalSanitize ? window.WaurimalSanitize(item.schoolInfo || '') : (item.schoolInfo || '');
 
