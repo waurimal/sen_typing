@@ -733,11 +733,42 @@
 
                 <!-- 탭 2: 학생 성적표 & CSV -->
                 <div id="t-tab-scores" class="hidden space-y-3">
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-bold text-slate-600">누적 학생 타자 성적표</span>
-                        <button type="button" onclick="downloadTypingScoresCSV()" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg shadow-2xs transition">
-                            <i class="fa-solid fa-file-excel mr-1"></i> 엑셀/CSV 다운로드
-                        </button>
+                    <div class="flex flex-wrap justify-between items-center gap-2">
+                        <span class="text-xs font-bold text-slate-600">누적 학생 문장 타자 성적표</span>
+                        <div class="flex items-center gap-2">
+                            <span id="teacherScoresCountBadge" class="text-[11px] font-bold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg">조회: 0건</span>
+                            <button type="button" onclick="downloadTypingScoresCSV()" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg shadow-2xs transition">
+                                <i class="fa-solid fa-file-excel mr-1"></i> 엑셀/CSV 다운로드
+                            </button>
+                        </div>
+                    </div>
+                    <!-- 교사용 성적표 필터 & 정렬 바 -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                        <select id="teacher-filter-grade" onchange="renderTypingScoresTable()" class="p-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-500">
+                            <option value="ALL">전체 학년</option>
+                            <option value="3">3학년</option>
+                            <option value="4">4학년</option>
+                            <option value="5">5학년</option>
+                            <option value="6">6학년</option>
+                        </select>
+                        <select id="teacher-filter-class" onchange="renderTypingScoresTable()" class="p-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-500">
+                            <option value="ALL">전체 반</option>
+                            <option value="1">1반</option><option value="2">2반</option>
+                            <option value="3">3반</option><option value="4">4반</option>
+                            <option value="5">5반</option><option value="6">6반</option>
+                            <option value="7">7반</option><option value="8">8반</option>
+                            <option value="9">9반</option><option value="10">10반</option>
+                            <option value="11">11반</option><option value="12">12반</option>
+                            <option value="13">13반</option><option value="14">14반</option>
+                            <option value="15">15반</option>
+                        </select>
+                        <select id="teacher-filter-unit" onchange="renderTypingScoresTable()" class="p-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-rose-500">
+                            <option value="ALL">전체 단원/주제</option>
+                        </select>
+                        <select id="teacher-sort-by" onchange="renderTypingScoresTable()" class="p-2 bg-white border border-rose-200 rounded-lg text-xs font-bold text-rose-700 outline-none focus:ring-2 focus:ring-rose-500">
+                            <option value="recent">최신순 ⏱️</option>
+                            <option value="score">점수순 🏆</option>
+                        </select>
                     </div>
                     <div class="max-h-[380px] overflow-y-auto custom-scrollbar border border-slate-200 rounded-xl bg-white">
                         <table class="w-full text-xs text-left">
@@ -876,7 +907,55 @@
 
         let hofAllScores = [];
         let hofCurrentPeriod = 'all';
-        let unsubscribeHof = null;
+        let unsubscribeHofTop = null;
+        let unsubscribeHofRecent = null;
+        const scoresMap = new Map();
+
+        function normalizeScoreDoc(id, data) {
+            let rawName = data.name || data.studentName || '학생';
+            let cleanName = String(rawName).replace(/\*/g, 'O');
+
+            let ts = data.timestamp;
+            if (typeof ts === 'string') ts = parseInt(ts, 10);
+            if (!ts && data.date) ts = new Date(data.date).getTime();
+            if (!ts) ts = Date.now();
+
+            const sGrade = String((data.grade !== undefined && data.grade !== null) ? data.grade : '');
+            const sClass = String((data.class !== undefined && data.class !== null) ? data.class : ((data.classNum !== undefined && data.classNum !== null) ? data.classNum : ''));
+            const sNum = String((data.number !== undefined && data.number !== null) ? data.number : ((data.studentNum !== undefined && data.studentNum !== null) ? data.studentNum : ''));
+            const sSchool = data.school || '이의초등학교';
+            const sSchoolInfo = (sGrade && sClass) ? `${sGrade}학년 ${sClass}반` : (data.schoolInfo || '');
+
+            return {
+                id: id,
+                name: rawName,
+                maskedName: maskStudentName(cleanName),
+                school: sSchool,
+                schoolInfo: sSchoolInfo,
+                grade: sGrade,
+                classNum: sClass,
+                studentNum: sNum,
+                lesson: data.lesson || '',
+                unit: data.lesson || data.unit || 'L01',
+                unitName: data.unit || data.lesson || 'L01',
+                score: parseInt(data.score, 10) || 0,
+                cpm: parseInt(data.cpm, 10) || 0,
+                accuracy: (data.accuracy !== undefined && data.accuracy !== null) ? data.accuracy : 100,
+                diff: data.diff || 1,
+                time: data.time || 0,
+                timestamp: ts,
+                dateStr: data.date || new Date(ts).toLocaleString('ko-KR')
+            };
+        }
+
+        function updateHofFromMap() {
+            hofAllScores = Array.from(scoresMap.values());
+            filterHofList();
+            const teacherScreen = document.getElementById('screen-teacher');
+            if (teacherScreen && !teacherScreen.classList.contains('hidden')) {
+                renderTypingScoresTable();
+            }
+        }
 
         // ════════════════════════════════════════════════════════════════════
         // ── 유틸: 이름 마스킹 (홍O동 표준) ──
@@ -1028,6 +1107,16 @@
             }
 
             renderLessonSelects();
+
+            // 로컬스토리지 캐시 우선 복원 (0ms 즉시 표시)
+            try {
+                const cachedMyScores = JSON.parse(localStorage.getItem('waurimal_sen_typing_my_scores') || '[]');
+                cachedMyScores.forEach(item => {
+                    if (item && item.id) scoresMap.set(item.id, item);
+                });
+                if (scoresMap.size > 0) updateHofFromMap();
+            } catch(e) {}
+
             listenToHallOfFame();
         }
 
@@ -1075,6 +1164,20 @@
                     teacherSel.appendChild(opt);
                 });
                 loadTeacherLessonData();
+            }
+
+            // 4. 교사용 성적표 단원 필터 셀렉트
+            const teacherHofSel = document.getElementById('teacher-filter-unit');
+            if (teacherHofSel) {
+                const cur = teacherHofSel.value;
+                teacherHofSel.innerHTML = '<option value="ALL">전체 단원/주제</option>';
+                lessons.forEach(l => {
+                    const opt = document.createElement('option');
+                    opt.value = l.code;
+                    opt.textContent = `[${l.code}] ${l.name}`;
+                    teacherHofSel.appendChild(opt);
+                });
+                if (cur) teacherHofSel.value = cur;
             }
         }
 
@@ -1387,6 +1490,9 @@
             const sNumber = studentInfo.studentNum || studentInfo.number || '1';
             const sSchool = (studentInfo.school && studentInfo.school.trim()) || '이의초등학교';
 
+            const curCode = (currentLesson && currentLesson.code) || 'L01';
+            const curName = (currentLesson && (currentLesson.name || currentLesson.code)) || 'Lesson 01';
+
             const record = {
                 name: sName,
                 maskedName: maskStudentName(sName),
@@ -1395,8 +1501,8 @@
                 grade: parseInt(sGrade, 10) || 6,
                 class: parseInt(sClass, 10) || 1,
                 number: parseInt(sNumber, 10) || 1,
-                lesson: currentLesson.code,
-                unit: currentLesson.name || currentLesson.code,
+                lesson: curCode,
+                unit: curName,
                 score: finalScore,
                 cpm: cpm,
                 accuracy: accuracy,
@@ -1406,13 +1512,30 @@
                 date: new Date().toLocaleString('ko-KR')
             };
 
+            // 0ms 무지연 로컬 즉시 반영
+            const tempId = 'local_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+            const localItem = normalizeScoreDoc(tempId, record);
+            scoresMap.set(tempId, localItem);
+            updateHofFromMap();
+
+            // 로컬 스토리지에 최근 기록 캐싱
             try {
-                await addDoc(collection(db, "rankings"), record);
+                const myHistory = JSON.parse(localStorage.getItem('waurimal_sen_typing_my_scores') || '[]');
+                myHistory.unshift(localItem);
+                localStorage.setItem('waurimal_sen_typing_my_scores', JSON.stringify(myHistory.slice(0, 50)));
+            } catch(e) {}
+
+            try {
+                const docRef = await addDoc(collection(db, "rankings"), record);
                 console.log("Saved ranking record:", record);
+                scoresMap.delete(tempId);
+                scoresMap.set(docRef.id, normalizeScoreDoc(docRef.id, record));
+                updateHofFromMap();
             } catch(e) {
                 console.warn("Failed to save score:", e);
             }
         }
+        window.saveScoreToDB = saveScoreToDB;
 
         // ════════════════════════════════════════════════════════════════════
         // ── 3. 실시간 명예의 전당 (Top 30 + 홍O동 마스킹) ──
@@ -1433,44 +1556,31 @@
         };
 
         function listenToHallOfFame() {
-            const q = query(collection(db, "rankings"), orderBy("score", "desc"), limit(300));
-            if (unsubscribeHof) unsubscribeHof();
+            if (unsubscribeHofTop) { unsubscribeHofTop(); unsubscribeHofTop = null; }
+            if (unsubscribeHofRecent) { unsubscribeHofRecent(); unsubscribeHofRecent = null; }
 
-            unsubscribeHof = onSnapshot(q, (snap) => {
-                hofAllScores = [];
+            // 1. 최근 학습 제출 기록 실시간 리스너 (최신순 300건 - 오늘, 이번 주, 이번 달 학생 완주 기록 100% 보장)
+            const qRecent = query(collection(db, "rankings"), orderBy("timestamp", "desc"), limit(300));
+            unsubscribeHofRecent = onSnapshot(qRecent, (snap) => {
                 snap.forEach(d => {
-                    const data = d.data();
-                    let rawName = data.name || '학생';
-                    let cleanName = String(rawName).replace(/\*/g, 'O');
-
-                    let ts = data.timestamp;
-                    if (typeof ts === 'string') ts = parseInt(ts, 10);
-                    if (!ts && data.date) ts = new Date(data.date).getTime();
-                    if (!ts) ts = Date.now();
-
-                    const sGrade = String(data.grade || '');
-                    const sClass = String(data.class || '');
-
-                    hofAllScores.push({
-                        id: d.id,
-                        name: rawName,
-                        maskedName: maskStudentName(cleanName),
-                        schoolInfo: (sGrade && sClass) ? `${sGrade}학년 ${sClass}반` : '',
-                        grade: sGrade,
-                        classNum: sClass,
-                        unit: data.lesson || 'L01',
-                        score: parseInt(data.score, 10) || 0,
-                        cpm: parseInt(data.cpm, 10) || 0,
-                        accuracy: data.accuracy || 100,
-                        time: data.time || 0,
-                        timestamp: ts,
-                        dateStr: data.date || new Date(ts).toLocaleDateString('ko-KR')
-                    });
+                    scoresMap.set(d.id, normalizeScoreDoc(d.id, d.data()));
                 });
-                filterHofList();
+                updateHofFromMap();
             }, (err) => {
-                console.error("HOF subscribe error:", err);
-                filterHofList();
+                console.warn("HOF recent query notice:", err);
+                updateHofFromMap();
+            });
+
+            // 2. 역대 최고점 실시간 리스너 (점수 내림차순 150건 - 전체 명예의 전당 레전드 랭킹 보장)
+            const qTop = query(collection(db, "rankings"), orderBy("score", "desc"), limit(150));
+            unsubscribeHofTop = onSnapshot(qTop, (snap) => {
+                snap.forEach(d => {
+                    scoresMap.set(d.id, normalizeScoreDoc(d.id, d.data()));
+                });
+                updateHofFromMap();
+            }, (err) => {
+                console.warn("HOF top query notice:", err);
+                updateHofFromMap();
             });
         }
 
@@ -1488,9 +1598,12 @@
             const oneWeekAgoMs = now.getTime() - 7 * 24 * 60 * 60 * 1000;
 
             let filtered = hofAllScores.filter(item => {
-                if (g !== 'ALL' && item.grade !== g) return false;
-                if (c !== 'ALL' && item.classNum !== c) return false;
-                if (u !== 'ALL' && item.unit !== u) return false;
+                if (g !== 'ALL' && String(item.grade) !== String(g)) return false;
+                if (c !== 'ALL' && String(item.classNum) !== String(c)) return false;
+                if (u !== 'ALL') {
+                    const matchUnit = (item.lesson === u) || (item.unit === u) || (item.unitName && item.unitName.includes(u));
+                    if (!matchUnit) return false;
+                }
 
                 if (hofCurrentPeriod !== 'all' && item.timestamp) {
                     const t = new Date(item.timestamp);
@@ -1503,15 +1616,26 @@
                 return true;
             });
 
-            // 1인 1최고점수
+            // 1인 1최고점수 (익명 '학생'은 고유 식별하여 뭉개짐 방지)
             const uniqueMap = new Map();
             filtered.forEach(item => {
-                const key = item.name + '_' + item.schoolInfo;
+                const isGenericName = (!item.name || item.name === '학생');
+                const key = isGenericName
+                    ? (item.id || item.timestamp)
+                    : (item.studentNum 
+                        ? `${item.grade}_${item.classNum}_${item.studentNum}_${item.name}_${u === 'ALL' ? '' : item.unit}`
+                        : `${item.schoolInfo}_${item.name}_${u === 'ALL' ? '' : item.unit}`);
+
                 if (!uniqueMap.has(key) || uniqueMap.get(key).score < item.score) {
                     uniqueMap.set(key, item);
                 }
             });
-            const displayList = Array.from(uniqueMap.values()).sort((a,b) => b.score - a.score).slice(0, 30);
+
+            // 점수 내림차순 정렬 (동점 시 최신순)
+            const displayList = Array.from(uniqueMap.values()).sort((a,b) => {
+                if (b.score !== a.score) return b.score - a.score;
+                return (b.timestamp || 0) - (a.timestamp || 0);
+            }).slice(0, 30);
 
             if (displayList.length === 0) {
                 container.innerHTML = `
@@ -1523,6 +1647,7 @@
                 return;
             }
 
+            const sanitize = window.WaurimalSanitize || (s => String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])));
             container.innerHTML = displayList.map((item, index, arr) => {
                 // 동점자 동일 순위 및 차순위 건너뛰기 (1등 2명이면 1등, 1등, 3등)
                 const rank = arr.findIndex(x => Number(x.score || 0) <= Number(item.score || 0)) + 1;
@@ -1532,9 +1657,9 @@
                 else if (rank === 3) rankBadge = '<span class="text-xl">🥉</span>';
 
                 const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleDateString('ko-KR', { year: '2-digit', month: 'numeric', day: 'numeric' }) : '-';
-                const safeName = window.WaurimalSanitize ? window.WaurimalSanitize(item.maskedName || maskStudentName(item.name || '학생')) : (item.maskedName || maskStudentName(item.name || '학생'));
-                const safeUnit = window.WaurimalSanitize ? window.WaurimalSanitize(item.unit || '') : (item.unit || '');
-                const safeSchool = window.WaurimalSanitize ? window.WaurimalSanitize(item.schoolInfo || '') : (item.schoolInfo || '');
+                const safeName = sanitize(item.maskedName || maskStudentName(item.name || '학생'));
+                const safeUnit = sanitize(item.unit || item.lesson || '');
+                const safeSchool = item.schoolInfo ? sanitize(item.schoolInfo) : '';
 
                 return `
                     <div class="flex items-center justify-between p-2.5 bg-white border border-rose-100 rounded-xl hover:border-rose-300 transition shadow-2xs">
@@ -1681,42 +1806,95 @@
             const tbody = document.getElementById('typingScoresTbody');
             if (!tbody) return;
 
-            if (hofAllScores.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-slate-400 text-xs">누적된 성적 데이터가 없습니다.</td></tr>';
+            const g = document.getElementById('teacher-filter-grade') ? document.getElementById('teacher-filter-grade').value : 'ALL';
+            const c = document.getElementById('teacher-filter-class') ? document.getElementById('teacher-filter-class').value : 'ALL';
+            const u = document.getElementById('teacher-filter-unit') ? document.getElementById('teacher-filter-unit').value : 'ALL';
+            const sortBy = document.getElementById('teacher-sort-by') ? document.getElementById('teacher-sort-by').value : 'recent';
+
+            let filtered = hofAllScores.filter(item => {
+                if (g !== 'ALL' && String(item.grade) !== String(g)) return false;
+                if (c !== 'ALL' && String(item.classNum) !== String(c)) return false;
+                if (u !== 'ALL') {
+                    const matchUnit = (item.lesson === u) || (item.unit === u) || (item.unitName && item.unitName.includes(u));
+                    if (!matchUnit) return false;
+                }
+                return true;
+            });
+
+            if (sortBy === 'recent') {
+                filtered.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+            } else {
+                filtered.sort((a,b) => {
+                    if (b.score !== a.score) return b.score - a.score;
+                    return (b.timestamp || 0) - (a.timestamp || 0);
+                });
+            }
+
+            const countBadge = document.getElementById('teacherScoresCountBadge');
+            if (countBadge) countBadge.textContent = `조회: ${filtered.length}건`;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="p-6 text-center text-slate-400 text-xs font-bold">조건에 해당하는 성적 데이터가 없습니다.</td></tr>';
                 return;
             }
 
-            const sorted = [...hofAllScores].sort((a,b) => b.score - a.score);
-            tbody.innerHTML = sorted.map((s, idx) => {
-                const safeName = window.WaurimalSanitize ? window.WaurimalSanitize(s.maskedName || '') : (s.maskedName || '');
-                const safeSchool = window.WaurimalSanitize ? window.WaurimalSanitize(s.schoolInfo || '-') : (s.schoolInfo || '-');
-                const safeUnit = window.WaurimalSanitize ? window.WaurimalSanitize(s.unit || '') : (s.unit || '');
+            const sanitize = window.WaurimalSanitize || (s => String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])));
+            tbody.innerHTML = filtered.map((s, idx) => {
+                const displayName = sanitize(s.name || s.maskedName || '학생');
+                const safeSchool = s.schoolInfo ? sanitize(s.schoolInfo) : '-';
+                const safeUnit = sanitize(s.unit || s.lesson || '');
                 return `
                 <tr class="hover:bg-rose-50/50 transition">
                     <td class="p-2.5 font-bold">${idx + 1}</td>
-                    <td class="p-2.5 font-black text-slate-800">${safeName}</td>
+                    <td class="p-2.5 font-black text-slate-800">${displayName}</td>
                     <td class="p-2.5 font-semibold text-slate-600">${safeSchool}</td>
                     <td class="p-2.5 font-semibold text-rose-700">${safeUnit}</td>
-                    <td class="p-2.5 font-black text-rose-600">${s.score.toLocaleString()}점</td>
+                    <td class="p-2.5 font-black text-rose-600">${Number(s.score || 0).toLocaleString()}점</td>
                     <td class="p-2.5 font-bold text-slate-700">${s.cpm}타/분</td>
                     <td class="p-2.5 font-bold text-emerald-600">${s.accuracy}%</td>
                     <td class="p-2.5 font-medium text-slate-500">${s.time}초</td>
-                    <td class="p-2.5 text-slate-400 text-[11px]">${s.dateStr}</td>
+                    <td class="p-2.5 text-slate-400 text-[11px]">${s.dateStr || (s.timestamp ? new Date(s.timestamp).toLocaleDateString('ko-KR') : '-')}</td>
                 </tr>
             `;
             }).join('');
         }
+        window.renderTypingScoresTable = renderTypingScoresTable;
 
         window.downloadTypingScoresCSV = () => {
-            if (hofAllScores.length === 0) {
+            const g = document.getElementById('teacher-filter-grade') ? document.getElementById('teacher-filter-grade').value : 'ALL';
+            const c = document.getElementById('teacher-filter-class') ? document.getElementById('teacher-filter-class').value : 'ALL';
+            const u = document.getElementById('teacher-filter-unit') ? document.getElementById('teacher-filter-unit').value : 'ALL';
+            const sortBy = document.getElementById('teacher-sort-by') ? document.getElementById('teacher-sort-by').value : 'recent';
+
+            let filtered = hofAllScores.filter(item => {
+                if (g !== 'ALL' && String(item.grade) !== String(g)) return false;
+                if (c !== 'ALL' && String(item.classNum) !== String(c)) return false;
+                if (u !== 'ALL') {
+                    const matchUnit = (item.lesson === u) || (item.unit === u) || (item.unitName && item.unitName.includes(u));
+                    if (!matchUnit) return false;
+                }
+                return true;
+            });
+
+            if (sortBy === 'recent') {
+                filtered.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+            } else {
+                filtered.sort((a,b) => {
+                    if (b.score !== a.score) return b.score - a.score;
+                    return (b.timestamp || 0) - (a.timestamp || 0);
+                });
+            }
+
+            if (filtered.length === 0) {
                 showAlert("다운로드할 데이터가 없습니다.");
                 return;
             }
 
-            const sorted = [...hofAllScores].sort((a,b) => b.score - a.score);
             let csv = "\uFEFF순위,이름,학적,단원,점수,타수(CPM),정확도(%),소요시간(초),달성일시\n";
-            sorted.forEach((item, idx) => {
-                csv += `"${idx + 1}","${item.maskedName}","${item.schoolInfo || ''}","${item.unit || ''}","${item.score}","${item.cpm}","${item.accuracy}","${item.time}","${item.dateStr}"\n`;
+            filtered.forEach((item, idx) => {
+                const dateStr = item.dateStr || (item.timestamp ? new Date(item.timestamp).toLocaleString('ko-KR') : '');
+                const studentDisplayName = item.name || item.maskedName || '학생';
+                csv += `"${idx + 1}","${studentDisplayName}","${item.schoolInfo || ''}","${item.unit || item.lesson || ''}","${item.score}","${item.cpm}","${item.accuracy}","${item.time}","${dateStr}"\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1755,13 +1933,14 @@
             try {
                 let count = 0;
                 for (const item of hofAllScores) {
-                    if (g !== 'ALL' && item.grade !== g) continue;
-                    if (c !== 'ALL' && item.classNum !== c) continue;
+                    if (g !== 'ALL' && String(item.grade) !== String(g)) continue;
+                    if (c !== 'ALL' && String(item.classNum) !== String(c)) continue;
                     await deleteDoc(doc(db, "rankings", item.id));
+                    scoresMap.delete(item.id);
                     count++;
                 }
                 showAlert(`총 ${count}건의 학급 성적 기록이 삭제되었습니다.`);
-                renderTypingScoresTable();
+                updateHofFromMap();
             } catch(e) {
                 showAlert("삭제 중 오류가 발생했습니다: " + e.message);
             }
