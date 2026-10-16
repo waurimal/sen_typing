@@ -1704,7 +1704,7 @@
 
         window.verifyTeacher = () => {
             const input = document.getElementById('teacherPwInput').value.trim();
-            const authOk = window.WaurimalAuth ? window.WaurimalAuth.authenticate(input) : (input === (localStorage.getItem('waurimal_admin_pw') || '1234'));
+            const authOk = window.WaurimalAuth ? window.WaurimalAuth.authenticate(input) : (input === (localStorage.getItem('waurimal_admin_pw') || '4657'));
             if (authOk) {
                 closeTeacherAuthModal();
                 window.showScreen('screen-teacher');
