@@ -612,7 +612,7 @@
                 <div class="space-y-2">
                     <input type="text" id="gameTypeInput" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="위 문장을 똑같이 타이핑하고 Enter를 누르세요..." class="w-full text-center text-lg md:text-xl font-bold p-3.5 bg-white border-2 border-rose-300 rounded-2xl outline-none focus:ring-4 focus:ring-rose-100 focus:border-rose-500 transition shadow-inner">
                     <div class="flex justify-between items-center text-[11px] text-slate-400 px-1">
-                        <span>💡 Enter 키를 누르면 다음 문장으로 넘어갑니다.</span>
+                        <span id="gameInputHint">💡 문장을 모두 입력한 후 Enter 키를 누르세요.</span>
                         <span>붙여넣기 방지 적용됨</span>
                     </div>
                 </div>
@@ -904,6 +904,7 @@
         let totalMistakes = 0;
         let isProcessing = false;
         let timerInterval = null;
+        let questionRenderTime = 0;
 
         let hofAllScores = [];
         let hofCurrentPeriod = 'all';
@@ -1278,6 +1279,7 @@
 
         function renderCurrentQuestion() {
             isProcessing = false;
+            questionRenderTime = Date.now();
             const q = sentencesQueue[currentSentenceIdx];
             const tot = sentencesQueue.length;
 
@@ -1296,6 +1298,9 @@
             inp.value = '';
             inp.disabled = false;
             inp.focus();
+
+            const hintEl = document.getElementById('gameInputHint');
+            if (hintEl) hintEl.innerHTML = '💡 문장을 모두 입력한 후 Enter 키를 누르세요.';
 
             updateSentenceDisplay('');
             qStart = Date.now();
@@ -1410,13 +1415,20 @@
                 document.getElementById('liveCpmDisplay').innerText = `${cpm} 타/분`;
             }
 
-            // 완벽히 입력했을 때 즉각 초록색 성공 피드백 & 350ms 후 자동 통과
+            // 완벽히 입력했을 때: 초록색 성공 피드백 및 Enter 입력 유도 (자동 넘어감 제거)
+            const hintEl = document.getElementById('gameInputHint');
             if (typed === target) {
-                this.classList.remove('border-rose-300', 'focus:border-rose-500');
+                this.classList.remove('border-rose-300', 'focus:border-rose-500', 'border-red-500', 'bg-red-50');
                 this.classList.add('border-emerald-500', 'bg-emerald-50', 'text-emerald-800');
-                setTimeout(() => {
-                    checkAndAdvanceSentence(true);
-                }, 350);
+                if (hintEl) {
+                    hintEl.innerHTML = '<span class="text-emerald-600 font-black animate-pulse">✨ 문장을 완성했습니다! Enter ↵ 키를 누르면 다음 문장으로 넘어갑니다.</span>';
+                }
+            } else {
+                this.classList.remove('border-emerald-500', 'bg-emerald-50', 'text-emerald-800');
+                this.classList.add('border-rose-300', 'focus:border-rose-500');
+                if (hintEl) {
+                    hintEl.innerHTML = '💡 문장을 모두 입력한 후 Enter 키를 누르세요.';
+                }
             }
         });
 
@@ -1424,28 +1436,41 @@
         gameInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                checkAndAdvanceSentence(false);
+                if (e.isComposing) return;
+
+                // 새 문장 로드 직후 300ms 이내에 들어온 엔터 키는 이전 문장의 후속 잔여 입력이므로 무시 (오답 처리 방지)
+                if (Date.now() - questionRenderTime < 300) {
+                    return;
+                }
+
+                checkAndAdvanceSentence();
             }
         });
 
-        function checkAndAdvanceSentence(isAuto = false) {
+        function checkAndAdvanceSentence() {
             if (isProcessing) return;
             const typed = gameInput.value;
             const target = sentencesQueue[currentSentenceIdx].sentence;
 
+            // 아무것도 입력하지 않은 빈 상태에서는 오답 경고를 띄우지 않고 조용히 무시 (다음 문제 직후 엔터만 친 경우 오답 처리 방지)
+            if (!typed || typed.trim() === '') {
+                return;
+            }
+
             if (typed !== target) {
-                if (!isAuto) {
-                    gameInput.classList.add('border-red-500', 'bg-red-50');
-                    setTimeout(() => {
-                        gameInput.classList.remove('border-red-500', 'bg-red-50');
-                    }, 500);
-                    showAlert("문장이 정확하게 일치하지 않습니다. 대소문자와 띄어쓰기, 문장 부호를 다시 확인해주세요!");
-                }
+                gameInput.classList.remove('border-rose-300', 'border-emerald-500', 'bg-emerald-50', 'text-emerald-800');
+                gameInput.classList.add('border-red-500', 'bg-red-50');
+                setTimeout(() => {
+                    gameInput.classList.remove('border-red-500', 'bg-red-50');
+                }, 500);
+                showAlert("문장이 정확하게 일치하지 않습니다. 대소문자와 띄어쓰기, 문장 부호를 다시 확인해주세요!");
                 return;
             }
 
             isProcessing = true;
             typedChars += target.length;
+
+            try { if (window.WaurimalAudio) WaurimalAudio.play('correct'); } catch(e){}
 
             currentSentenceIdx++;
             if (currentSentenceIdx >= sentencesQueue.length) {
