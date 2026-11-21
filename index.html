@@ -361,6 +361,7 @@
 
     <!-- 상단 와우리말 통합 GNB 네비게이션 -->
     <script src="../common/waurimal-nav.js"></script>
+    <script src="../common/curriculum.js"></script>
 
     <!-- 메인 컨테이너 -->
     <main class="flex-1 max-w-6xl w-full mx-auto px-4 py-4 md:py-6 flex flex-col gap-4">
@@ -405,8 +406,25 @@
                                 문장 수 로딩중...
                             </span>
                         </div>
+
+                        <!-- 학년 선택 필터 버튼 그룹 -->
+                        <div class="flex items-center gap-1.5 flex-wrap" id="senGradeFilterGroup">
+                            <button type="button" class="sen-grade-btn px-2.5 py-1 rounded-xl text-[11px] font-bold bg-white text-slate-600 border border-rose-200 hover:border-rose-400 cursor-pointer transition" data-grade="3" onclick="filterSenGrade(3)">
+                                3학년 <span class="text-[9px] text-amber-600 font-medium">(YBM 최희경)</span>
+                            </button>
+                            <button type="button" class="sen-grade-btn px-2.5 py-1 rounded-xl text-[11px] font-bold bg-white text-slate-600 border border-rose-200 hover:border-rose-400 cursor-pointer transition" data-grade="4" onclick="filterSenGrade(4)">
+                                4학년 <span class="text-[9px] text-amber-600 font-medium">(YBM 최희경)</span>
+                            </button>
+                            <button type="button" class="sen-grade-btn px-2.5 py-1 rounded-xl text-[11px] font-bold bg-white text-slate-600 border border-rose-200 hover:border-rose-400 cursor-pointer transition" data-grade="5" onclick="filterSenGrade(5)">
+                                5학년 <span class="text-[9px] text-emerald-600 font-medium">(천재 함순애)</span>
+                            </button>
+                            <button type="button" class="sen-grade-btn active px-2.5 py-1 rounded-xl text-[11px] font-bold bg-rose-500 text-white border border-rose-600 cursor-pointer shadow-sm transition" data-grade="6" onclick="filterSenGrade(6)">
+                                6학년 <span class="text-[9px] text-rose-100 font-medium">(천재 함순애)</span>
+                            </button>
+                        </div>
+
                         <select id="homeLessonSelect" onchange="updateSelectedLessonInfo()" class="w-full p-3 bg-white border border-rose-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-rose-500">
-                            <!-- 22개 단원 동적 로드 -->
+                            <!-- 48개 단원 동적 로드 -->
                         </select>
 
                         <!-- 난이도 선택 -->
@@ -1094,22 +1112,97 @@
         // ════════════════════════════════════════════════════════════════════
         // ── 1. DB 단원 데이터 로드 및 초기화 ──
         // ════════════════════════════════════════════════════════════════════
+        let currentSenGrade = 6;
+
+        window.filterSenGrade = (grade) => {
+            currentSenGrade = Number(grade) || 6;
+            document.querySelectorAll('#senGradeFilterGroup .sen-grade-btn').forEach(btn => {
+                const g = Number(btn.getAttribute('data-grade'));
+                if (g === currentSenGrade) {
+                    btn.className = "sen-grade-btn active px-2.5 py-1 rounded-xl text-[11px] font-bold bg-rose-500 text-white border border-rose-600 cursor-pointer shadow-sm transition";
+                } else {
+                    btn.className = "sen-grade-btn px-2.5 py-1 rounded-xl text-[11px] font-bold bg-white text-slate-600 border border-rose-200 hover:border-rose-400 cursor-pointer transition";
+                }
+            });
+            renderHomeLessonSelect();
+        };
+
+        function renderHomeLessonSelect() {
+            const homeSel = document.getElementById('homeLessonSelect');
+            if (!homeSel || !lessons || lessons.length === 0) return;
+
+            // 해당 학년 단원만 필터링 (없으면 전체)
+            let filtered = lessons.filter(l => {
+                if (l.grade && Number(l.grade) === currentSenGrade) return true;
+                if (l.code && l.code.startsWith(`${currentSenGrade}G_`)) return true;
+                return false;
+            });
+            if (filtered.length === 0) filtered = lessons;
+
+            homeSel.innerHTML = '';
+            filtered.forEach(l => {
+                const globalIdx = lessons.indexOf(l);
+                const parsed = parseLessonSentences(l.words);
+                const opt = document.createElement('option');
+                opt.value = globalIdx;
+                opt.textContent = `[${l.code}] ${l.name} (${parsed.length}문장)`;
+                homeSel.appendChild(opt);
+            });
+            updateSelectedLessonInfo();
+        }
+
         async function initApp() {
             syncProfileDisplay();
 
-            // 22개 단원 목록 로드
-            try {
-                const snap = await getDoc(doc(db, "settings", "main"));
-                if (snap.exists() && snap.data().lessons) {
-                    lessons = snap.data().lessons;
+            // 1) WaurimalCurriculum (초등 영어 공통 48개 단원) 최우선 자동 연동
+            if (window.WaurimalCurriculum && typeof window.WaurimalCurriculum.getLessons === 'function') {
+                try {
+                    const cLessons = window.WaurimalCurriculum.getLessons();
+                    if (Array.isArray(cLessons) && cLessons.length > 0) {
+                        lessons = cLessons.map(l => {
+                            const sentsStr = (l.sentences || []).map(s => {
+                                const en = (s.en || s.sentence || '').trim();
+                                const kr = (s.kr || s.meaning || '').trim();
+                                return kr ? `${en} : ${kr}` : en;
+                            }).join('\n');
+                            return {
+                                code: l.code,
+                                grade: l.grade,
+                                publisher: l.publisher || '',
+                                name: l.name,
+                                words: sentsStr
+                            };
+                        });
+                        console.log("[sen_typing] WaurimalCurriculum 48개 단원 연동 성공!");
+                    }
+                } catch(e) {
+                    console.warn("[sen_typing] Curriculum sync error:", e);
                 }
-            } catch(e) {
-                console.error("Lessons load error:", e);
             }
 
+            // 2) Firestore 단원 백업 확인
+            if (!lessons || lessons.length === 0) {
+                try {
+                    const snap = await getDoc(doc(db, "settings", "main"));
+                    if (snap.exists() && snap.data().lessons) {
+                        lessons = snap.data().lessons;
+                    }
+                } catch(e) {
+                    console.error("Lessons load error:", e);
+                }
+            }
+
+            // 학생 프로필 기반 기본 학년 자동 설정
+            if (window.WaurimalStudent && typeof WaurimalStudent.get === 'function') {
+                const profile = WaurimalStudent.get();
+                if (profile && profile.grade && [3, 4, 5, 6].includes(Number(profile.grade))) {
+                    currentSenGrade = Number(profile.grade);
+                }
+            }
+            window.filterSenGrade(currentSenGrade);
             renderLessonSelects();
 
-            // 로컬스토리지 캐시 우선 복원 (0ms 즉시 표시)
+            // 로컬스토리지 캐시 우선 복원
             try {
                 const cachedMyScores = JSON.parse(localStorage.getItem('waurimal_sen_typing_my_scores') || '[]');
                 cachedMyScores.forEach(item => {
@@ -1124,21 +1217,7 @@
         function renderLessonSelects() {
             if (!lessons || lessons.length === 0) return;
 
-            // 1. 홈 화면 단원 선택 셀렉트
-            const homeSel = document.getElementById('homeLessonSelect');
-            if (homeSel) {
-                const cur = homeSel.value;
-                homeSel.innerHTML = '';
-                lessons.forEach((l, idx) => {
-                    const parsed = parseLessonSentences(l.words);
-                    const opt = document.createElement('option');
-                    opt.value = idx;
-                    opt.textContent = `[${l.code}] ${l.name} (${parsed.length}문장)`;
-                    homeSel.appendChild(opt);
-                });
-                if (cur !== '') homeSel.value = cur;
-                updateSelectedLessonInfo();
-            }
+            renderHomeLessonSelect();
 
             // 2. 명예의 전당 단원 필터 셀렉트
             const hofSel = document.getElementById('hof-filter-unit');
@@ -1184,7 +1263,19 @@
 
         function parseLessonSentences(rawWords) {
             if (!rawWords) return [];
-            return rawWords.split('\n')
+            if (Array.isArray(rawWords)) {
+                return rawWords.map(s => {
+                    if (typeof s === 'string') {
+                        const parts = s.split(':');
+                        return { sentence: parts[0].trim(), meaning: parts.length > 1 ? parts.slice(1).join(':').trim() : '' };
+                    }
+                    return {
+                        sentence: (s.sentence || s.en || '').trim(),
+                        meaning: (s.meaning || s.kr || '').trim()
+                    };
+                }).filter(s => s.sentence);
+            }
+            return String(rawWords).split('\n')
                 .map(line => line.trim())
                 .filter(line => line.length > 0)
                 .map(line => {
@@ -1192,7 +1283,7 @@
                     const sen = parts[0].trim();
                     const meaning = parts.length > 1 ? parts.slice(1).join(':').trim() : '';
                     return { sentence: sen, meaning: meaning };
-                });
+                }).filter(s => s.sentence);
         }
 
         window.updateSelectedLessonInfo = () => {
